@@ -51,8 +51,8 @@ export default function BuyReallocationList() {
         const fetchEnums = async () => {
             try {
                 const [exeRes, telRes] = await Promise.all([
-                    getUser(1),
-                    getUser(1),
+                    getUser(3),
+                    getUser(2),
                 ]);
 
                 setExecutives(mapUser(exeRes?.data?.items));

@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { useState, useEffect } from "react";
-import { getBuyFollowupLeadByID, getBuyStage, getBuyStageDispositions, getPreferredTime, getLeadSources, getBuyModes, getFuelTypes, getColor, getOwner, getMake, getModel, getYear, getUser, getBroker, getBranch, getState, getCity } from "../../api/services";
+import { postBuyLeadFollowup, getBuyFollowupLeadByID, getBuyStage, getBuyStageDispositions, getPreferredTime, getLeadSources, getBuyModes, getFuelTypes, getColor, getOwner, getMake, getModel, getYear, getUser, getBroker, getBranch, getState, getCity } from "../../api/services";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -59,7 +59,7 @@ export default function BuyLeadFollowupForm() {
     const selectedDisposition = watch("disposition")?.toLowerCase();
     const isHome = selectedMode === "home";
     const isBranch = selectedMode === "branch";
-    const isAppointment = selectedDisposition == "appointment";
+    const isAppointment = selectedDisposition === "appointment";
     const isExecutiveRequired = isBranch || isHome || isAppointment;
     const isStateRequired = isHome;
     const isCityRequired = isHome;
@@ -234,13 +234,10 @@ export default function BuyLeadFollowupForm() {
 
     useEffect(() => {
         if (!isAppointment) {
-            setValue("appointmentDate", "");
             setValue("preferredTime", "");
 
-            clearErrors("appointmentDate");
             clearErrors("preferredTime");
 
-            unregister("appointmentDate");
             unregister("preferredTime");
         }
     }, [isAppointment]);
@@ -416,7 +413,6 @@ export default function BuyLeadFollowupForm() {
         try {
             const payload = {
                 branch: getOptionalLabel(branchs, data.branch),
-                mobile: data.mobile,
                 alternateMobile: data.alternateMobile,
                 source: getOptionalLabel(leadSources, data.source),
                 mode: data.mode,
@@ -445,16 +441,21 @@ export default function BuyLeadFollowupForm() {
                 ourOffer: Number(data.ourOffer),
                 telecaller: getOptionalLabel(telecallers, data.telecaller),
                 executive: getOptionalLabel(executives, data.executive),
-                remarks: data.remarks,
+
+                leadFollowup: data.stage
+                    ? {
+                        stage: data.stage,
+                        disposition: data.disposition,
+                        calldate: data.calldate,
+                        preferredTime: data.preferredTime,
+                        notes: data.notes,
+                    }
+                    : null,
             };
 
             console.log("Final Payload and id:", id, payload);
             let res;
-            // if (isEdit) {
-            //     res = await putBuyLead(id, payload);
-            // } else {
-            //     res = await postBuyLead(payload);
-            // }
+            res = await postBuyLeadFollowup(id, payload);
             toast.success(res?.data?.message || "Success");
             navigate("/leads/buyleadlist");
 
@@ -786,19 +787,19 @@ export default function BuyLeadFollowupForm() {
                                         rules={{ required: "Disposition is required" }}
                                         errors={errors}
                                     />
+                                    <FormDatePicker
+                                        label="Call Date"
+                                        name="calldate"
+                                        control={control}
+                                        rules={{
+                                            required: "Call date is required"
+                                        }}
+                                        errors={errors}
+                                        minDate={new Date()}
+                                        maxDate={new Date(new Date().setDate(new Date().getDate() + 5))}
+                                    />
                                     {isAppointment && (
                                         <>
-                                            <FormDatePicker
-                                                label="Appointment Date"
-                                                name="callDate"
-                                                control={control}
-                                                rules={{
-                                                    required: isAppointment ? "Appointment date is required" : false,
-                                                }}
-                                                errors={errors}
-                                                minDate={new Date()}
-                                                maxDate={new Date(new Date().setDate(new Date().getDate() + 4))}
-                                            />
                                             <FormSelectSearch
                                                 label="Preferred Time"
                                                 name="preferredTime"
