@@ -31,7 +31,8 @@ export default function BuyLeadFollowupForm() {
         shouldUnregister: true
     });
 
-    const [loading, setLoading] = useState(true);
+    const [pageLoading, setPageLoading] = useState(false);
+    const [formLoading, setFormLoading] = useState(false);
     const [leadSources, setLeadSources] = useState([]);
     const [modes, setModes] = useState([]);
     const [fuelTypes, setFuelTypes] = useState([]);
@@ -56,14 +57,17 @@ export default function BuyLeadFollowupForm() {
 
 
     const selectedMode = watch("mode")?.toLowerCase();
+    const selectedStage = watch("stage")?.toLowerCase();
     const selectedDisposition = watch("disposition")?.toLowerCase();
     const isHome = selectedMode === "home";
     const isBranch = selectedMode === "branch";
     const isAppointment = selectedDisposition === "appointment";
+    const isCallDate = ["appointment", "under followup"].includes(selectedStage);
     const isExecutiveRequired = isBranch || isHome || isAppointment;
     const isStateRequired = isHome;
     const isCityRequired = isHome;
     const isAddressRequired = isHome;
+    const isCallDateRequired = isCallDate;
 
     const selectedSource = watch("source");
     const selectedSourceObj = leadSources.find(
@@ -243,13 +247,23 @@ export default function BuyLeadFollowupForm() {
     }, [isAppointment]);
 
     useEffect(() => {
+        if (!isCallDate) {
+            setValue("calldate", "");
+
+            clearErrors("calldate");
+
+            unregister("calldate");
+        }
+    }, [isCallDate]);
+
+    useEffect(() => {
         if (!isEdit) return;
 
         let isMounted = true;
         if (!branchs.length || !leadSources.length || !state.length) return;
         const fetchLeadAndPopulate = async () => {
             try {
-                setLoading(true);
+                setFormLoading(true);
 
                 const res = await getBuyFollowupLeadByID(id);
                 const data = res.data;
@@ -326,7 +340,7 @@ export default function BuyLeadFollowupForm() {
                 console.error(err);
                 toast.error("Failed to load lead data");
             } finally {
-                if (isMounted) setLoading(false);
+                if (isMounted) setFormLoading(false);
             }
         };
 
@@ -367,6 +381,7 @@ export default function BuyLeadFollowupForm() {
     // Fetch enums
     useEffect(() => {
         const fetchEnums = async () => {
+            setPageLoading(true);
             try {
                 const [leadRes, modeRes, fuelRes, colorRes, ownerRes, makeRes, yearRes, exeRes, telRes, branchRes, stateRes, stageRes, preferTimeRes] = await Promise.all([
                     getLeadSources(),
@@ -401,7 +416,7 @@ export default function BuyLeadFollowupForm() {
             } catch (err) {
                 console.error("API error:", err);
             } finally {
-                setLoading(false);
+                setPageLoading(false);
             }
         };
         console.log("API CALLED");
@@ -446,7 +461,15 @@ export default function BuyLeadFollowupForm() {
                     ? {
                         stage: data.stage,
                         disposition: data.disposition,
-                        calldate: data.calldate,
+                        calldate: data.calldate
+                            ? (() => {
+                                const d = new Date(data.calldate);
+                                const year = d.getFullYear();
+                                const month = String(d.getMonth() + 1).padStart(2, "0");
+                                const date = String(d.getDate()).padStart(2, "0");
+                                return `${year}-${month}-${date}`;
+                            })()
+                            : null,
                         preferredTime: data.preferredTime,
                         notes: data.notes,
                     }
@@ -457,7 +480,7 @@ export default function BuyLeadFollowupForm() {
             let res;
             res = await postBuyLeadFollowup(id, payload);
             toast.success(res?.data?.message || "Success");
-            navigate("/leads/buyleadlist");
+            navigate("/leads/buyleadfollowuplist");
 
         } catch (err) {
             console.error("Submit error:", err);
@@ -472,7 +495,11 @@ export default function BuyLeadFollowupForm() {
         <MainLayout>
             <div className="content">
                 <h3 style={{ marginBottom: "20px" }}>
-                    {loading ? <Skeleton width={200} /> : "Lead Followup"}
+                    {pageLoading || formLoading ? (
+                        <Skeleton width={200} />
+                    ) : (
+                        "Lead Followup"
+                    )}
                 </h3>
 
                 <form
@@ -787,17 +814,23 @@ export default function BuyLeadFollowupForm() {
                                         rules={{ required: "Disposition is required" }}
                                         errors={errors}
                                     />
-                                    <FormDatePicker
-                                        label="Call Date"
-                                        name="calldate"
-                                        control={control}
-                                        rules={{
-                                            required: "Call date is required"
-                                        }}
-                                        errors={errors}
-                                        minDate={new Date()}
-                                        maxDate={new Date(new Date().setDate(new Date().getDate() + 5))}
-                                    />
+                                    {isCallDate && (
+                                        <>
+                                            <FormDatePicker
+                                                label="Call Date"
+                                                name="calldate"
+                                                control={control}
+                                                rules={
+                                                    isCallDateRequired
+                                                        ? { required: "Call date is required" }
+                                                        : {}
+                                                }
+                                                errors={errors}
+                                                minDate={new Date()}
+                                                maxDate={new Date(new Date().setDate(new Date().getDate() + 5))}
+                                            />
+                                        </>
+                                    )}
                                     {isAppointment && (
                                         <>
                                             <FormSelectSearch
@@ -819,7 +852,7 @@ export default function BuyLeadFollowupForm() {
                                     />
                                 </div>
                                 <div className="form-actions">
-                                    {loading ? (
+                                    {pageLoading || formLoading ? (
                                         <Skeleton height={45} width={120} />
                                     ) : (
                                         <>

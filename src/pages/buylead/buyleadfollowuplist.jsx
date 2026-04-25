@@ -142,21 +142,21 @@ export default function BuyFollowupLeadList() {
 
     const columns = [
         { key: "id", label: "#" },
-        // {
-        //     key: "status",
-        //     label: "Status",
-        //     render: (row) => (
-        //         <span className={`badge ${getStatusClass(row.status)}`}>
-        //             {row.status}
-        //         </span>
-        //     ),
-        // },
+        {
+            key: "status",
+            label: "Status",
+            render: (row) => (
+                <span className={`badge ${getStatusClass(row.status)}`}>
+                    {row.status}
+                </span>
+            ),
+        },
         {
             key: "stage",
             label: "Stage",
             render: (row) => (
-                <span className={`badge ${getStageClass(row.stage)}`}>
-                    {row.stage}
+                <span className={`badge ${getStageClass(row.leadFollowup.stage)}`}>
+                    {row.leadFollowup.stage}
                 </span>
             ),
         },
@@ -171,11 +171,19 @@ export default function BuyFollowupLeadList() {
                 </div>
             ),
         },
-        // { key: "disposition", label: "Disposition" },
+        {
+            key: "disposition",
+            label: "Disposition",
+            render: (row) => (
+                <span>
+                    {row.leadFollowup?.disposition || "-"}
+                </span>
+            ),
+        },
         {
             key: "callDate",
             label: "Call Date",
-            render: (row) => `${formatDateTime(row.callDate)}`,
+            render: (row) => `${formatDateTime(row.leadFollowup.calldate)}`,
         },
         {
             key: "car",
@@ -192,21 +200,21 @@ export default function BuyFollowupLeadList() {
         { key: "clientOffer", label: "Client Offer" },
         { key: "ourOffer", label: "Our Offer" },
         { key: "brokerName", label: "Broker" },
-        // {
-        //     key: "created",
-        //     label: "Created",
-        //     render: (row) => `${row.createdBy} - ${formatDateTime(row.createdAt)}`,
-        // },
-        // {
-        //     key: "allocate",
-        //     label: "Allocate",
-        //     render: (row) => `${row.allocatedBy} - ${formatDateTime(row.allocatedAt)}`,
-        // },
-        // {
-        //     key: "followup",
-        //     label: "Followup",
-        //     render: (row) => `${row.followupCreatedBy} - ${formatDateTime(row.followupCreatedAt)}`,
-        // },
+        {
+            key: "created",
+            label: "Created",
+            render: (row) => `${row.createdBy} - ${formatDateTime(row.createdAt)}`,
+        },
+        {
+            key: "allocate",
+            label: "Allocate",
+            render: (row) => `${row.allocatedBy} - ${formatDateTime(row.allocatedAt)}`,
+        },
+        {
+            key: "followup",
+            label: "Followup",
+            render: (row) => `${row.followupCreatedBy} - ${formatDateTime(row.followupCreatedAt)}`,
+        },
         {
             key: "actions",
             label: "#",
@@ -242,70 +250,95 @@ export default function BuyFollowupLeadList() {
                         />
                     ) : (
                         <div className="card-view">
-                            {data.map((row) => (
-                                <div key={row.id} className="lead-card">
+                            {data.map((row) => {
+                                const lf = row.leadFollowup || {};
 
-                                    {/* TOP */}
-                                    <div className="card-header">
-                                        <div className="left">
-                                            <Avatar name={row.customerName} seed={row.id} />
-                                            <div>
-                                                <div className="lead-id">#{row.id}</div>
-                                                <div className="customer-name">{row.customerName}</div>
+                                return (
+                                    <div key={row.id} className="lead-card">
+
+                                        {/* HEADER */}
+                                        <div className="card-header">
+                                            <div className="left">
+                                                <Avatar name={row.customerName} seed={row.id} />
+                                                <div>
+                                                    <div className="lead-id">#{row.id}</div>
+                                                    <div className="customer-name">{row.customerName}</div>
+                                                    <div className="mobile">{row.mobile || "-"}</div>
+                                                </div>
+                                            </div>
+
+                                            <div className="right">
+                                                <span className={`badge ${getStatusClass(row.status)}`}>
+                                                    {row.status}
+                                                </span>
+                                                <ActionMenu onView={() => handleView(row)} />
                                             </div>
                                         </div>
 
-                                        <div className="card-actions">
-                                            <ActionMenu
-                                                onView={() => handleView(row)}
-                                            />
+                                        {/* VEHICLE (PRIMARY FOCUS AREA) */}
+                                        <div className="card-highlight">
+                                            <div className="vehicle-title">
+                                                {row.make} - {row.model} - {row.year}
+                                            </div>
+                                            <div className="vehicle-sub">
+                                                {row.fuelType} • {row.kms} kms • {row.owner} owner
+                                            </div>
                                         </div>
+
+                                        {/* META GRID */}
+                                        <div className="meta-grid">
+                                            <span>Branch: {row.branch || "-"}</span>
+                                            <span>Source: {row.source || "-"}</span>
+                                            <span>Mode: {row.mode || "-"}</span>
+                                            <span>Broker: {row.brokerName || "-"}</span>
+                                        </div>
+
+                                        {/* TEAM ASSIGNMENT */}
+                                        <div className="team-row">
+                                            <span>Telecaller: {row.telecaller || "-"}</span>
+                                            <span>Executive: {row.executive || "-"}</span>
+                                        </div>
+
+                                        {/* OFFER SECTION */}
+                                        <div className="offer-row">
+                                            <span>Client Offer: {row.clientOffer || "-"}</span>
+                                            <span>Our Offer: {row.ourOffer || "-"}</span>
+                                        </div>
+
+                                        {/* FOLLOWUP SECTION */}
+                                        <div className="followup-box">
+
+                                            <div className="followup-left">
+                                                <span className={`badge ${getStageClass(lf.stage)}`}>
+                                                    {lf.stage || "-"}
+                                                </span>
+
+                                                <span className="badge light">
+                                                    {lf.disposition || "-"}
+                                                </span>
+                                            </div>
+
+                                            <div className="followup-right">
+                                                <span className="date">
+                                                    {lf.calldate ? formatDateTime(lf.calldate) : "-"}
+                                                </span>
+                                            </div>
+
+                                        </div>
+
+                                        {/* FOOTER AUDIT */}
+                                        <div className="audit-row">
+                                            <span>Created: {row.createdBy} • {formatDateTime(row.createdAt)}</span>
+                                            <span>Allocated: {row.allocatedBy} • {formatDateTime(row.allocatedAt)}</span>
+                                            <span>Followup: {row.followupCreatedBy} • {formatDateTime(row.followupCreatedAt)}</span>
+                                        </div>
+
                                     </div>
-
-                                    {/* MAIN INFO */}
-                                    <div className="card-body">
-
-                                        <div className="card-row">
-                                            <span>{row.mobile}</span>
-                                        </div>
-
-                                        <div className="card-row highlight">
-                                            {row.make} - {row.model}
-                                        </div>
-
-                                        <div className="card-sub">
-                                            {row.fuelType} • {row.year} • {row.owner} owner • {row.kms} kms
-                                        </div>
-
-                                        <div className="card-meta">
-                                            <span>{row.branch}</span>
-                                            <span>{row.source}</span>
-                                            <span>{row.mode}</span>
-                                            <span>{row.brokerName}</span>
-                                        </div>
-                                        <div className="card-sub">
-                                            {row.telecaller} • {row.executive}
-                                        </div>
-                                        <div className="card-sub">
-                                            {row.clientOffer} • {row.ourOffer}
-                                        </div>
-
-                                    </div>
-
-                                    {/* FOOTER */}
-                                    <div className="card-footer">
-                                        <span className={`badge ${getStageClass(row.stage)}`}>
-                                            {row.stage}
-                                        </span>
-
-                                        <span className="date">
-                                            {formatDateTime(row.callDate)}
-                                        </span>
-                                    </div>
-
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
+
+
 
                     )}
 

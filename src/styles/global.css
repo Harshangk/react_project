@@ -1560,3 +1560,27 @@ body.dark {
     font-size: 12px;
     color: #6b7280;
 }
+
+.meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.team-row,
+.offer-row,
+.audit-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-top: 6px;
+    color: #374151;
+}
+
+.card-highlight {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 8px;
+}
