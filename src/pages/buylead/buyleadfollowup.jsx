@@ -471,9 +471,9 @@ export default function BuyLeadFollowupForm() {
     return (
         <MainLayout>
             <div className="content">
-                <h2 style={{ marginBottom: "20px" }}>
-                    {loading ? <Skeleton width={200} /> : "Buy Lead Followup Form"}
-                </h2>
+                <h3 style={{ marginBottom: "20px" }}>
+                    {loading ? <Skeleton width={200} /> : "Lead Followup"}
+                </h3>
 
                 <form
                     onSubmit={handleSubmit(onSubmit)}

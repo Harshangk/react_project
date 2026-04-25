@@ -3,7 +3,8 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: "Segoe UI", sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, Arial, sans-serif;
 }
 
 /* ================= THEME VARIABLES ================= */
@@ -68,6 +69,15 @@ body.dark {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
 
+.card--login {
+    width: 360px;
+    min-height: 260px;
+}
+
+.card--full {
+    width: 100%;
+}
+
 .title {
     text-align: center;
     color: #2563eb;
@@ -82,6 +92,7 @@ body.dark {
 
 .input {
     width: 100%;
+    box-sizing: border-box;
     padding: 12px;
     margin-bottom: 15px;
     border-radius: 8px;
@@ -117,6 +128,7 @@ body.dark {
     color: red;
     font-size: 12px;
     margin-bottom: 10px;
+    min-height: 16px;
 }
 
 /* ================= LAYOUT ================= */
@@ -421,20 +433,21 @@ body.dark {
 }
 
 .react-select-container.error .react-select__control {
-    border-color: red !important;
+    color: red;
+    font-size: 12px;
+    margin-bottom: 10px;
+    min-height: 16px;
 }
 
 .react-select-container.error .react-select__control:hover {
-    border-color: red;
+    color: red;
+    font-size: 12px;
+    margin-bottom: 10px;
+    min-height: 16px;
 }
 
 .react-select__menu {
     z-index: 9999;
-}
-
-.error-text {
-    color: red;
-    font-size: 12px;
 }
 
 /* ================= TABLE CONTAINER ================= */
@@ -1129,7 +1142,10 @@ body.dark {
 }
 
 .date-input.error {
-    border-color: red;
+    color: red;
+    font-size: 12px;
+    margin-bottom: 10px;
+    min-height: 16px;
 }
 
 /* Clear button */

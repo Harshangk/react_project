@@ -8,6 +8,8 @@ import ActionMenu from "../../components/common/ActionMenu";
 import Avatar from "../../components/common/Avatar";
 import { formatDateTime } from "../../utils/formatDate";
 import { getBuyFollowupLeads, getBuyFollowupLeadExport } from "../../api/services";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 export default function BuyFollowupLeadList() {
     const navigate = useNavigate();
@@ -219,7 +221,9 @@ export default function BuyFollowupLeadList() {
     return (
         <MainLayout>
             <div className="content">
-                <h2 className="page-title">Buy Lead Followup List</h2>
+                <h3 style={{ marginBottom: "20px" }}>
+                    {loading ? <Skeleton width={200} /> : "Search Followup Leads"}
+                </h3>
 
                 <TableToolbar
                     search={search}

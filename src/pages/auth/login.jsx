@@ -43,24 +43,24 @@ function Login() {
 
     return (
         <div className="container-center">
-            <div className="card">
-                <h2 className="logo">
+            <div className="card card--login">
+                <h3 className="logo">
                     {loading ? (
-                        <Skeleton width={350} height={24} />
+                        <Skeleton width="100%" height={24} />
                     ) : (
                         <>
                             <img src={appConfig.logo} alt="logo" style={{ height: "24px", marginRight: "8px" }} />
                             {appConfig.appName}
                         </>
                     )}
-                </h2>
+                </h3>
 
                 <form onSubmit={handleSubmit}>
                     {loading ? (
                         <>
-                            <Skeleton height={40} style={{ marginBottom: "12px" }} />
-                            <Skeleton height={40} style={{ marginBottom: "12px" }} />
-                            <Skeleton height={45} width={120} />
+                            <Skeleton height={40} width="100%" style={{ marginBottom: "12px" }} />
+                            <Skeleton height={40} width="100%" style={{ marginBottom: "12px" }} />
+                            <Skeleton height={45} width="100%" />
                         </>
                     ) : (
                         <>

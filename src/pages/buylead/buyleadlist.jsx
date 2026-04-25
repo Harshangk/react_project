@@ -10,6 +10,8 @@ import { formatDateTime } from "../../utils/formatDate";
 import { getBuyLeads, deleteBuyLead, getBuyLeadExport } from "../../api/services";
 import ConfirmModal from "../../components/common/ConfirmModal";
 import { toast } from "react-toastify";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 export default function BuyLeadList() {
     const navigate = useNavigate();
@@ -212,7 +214,9 @@ export default function BuyLeadList() {
     return (
         <MainLayout>
             <div className="content">
-                <h2 className="page-title">Buy Lead List</h2>
+                <h3 style={{ marginBottom: "20px" }}>
+                    {loading ? <Skeleton width={200} /> : "Search Leads"}
+                </h3>
 
                 <TableToolbar
                     search={search}

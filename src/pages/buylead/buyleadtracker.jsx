@@ -7,6 +7,8 @@ import ActionMenu from "../../components/common/ActionMenu";
 import { formatDateTime } from "../../utils/formatDate";
 import { getBuyImportLeads, downloadImportFile, getBuyImportLeadExport } from "../../api/services";
 import { toast } from "react-toastify";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 export default function BuyLeadList() {
     const [data, setData] = useState([]);
@@ -207,7 +209,9 @@ export default function BuyLeadList() {
     return (
         <MainLayout>
             <div className="content">
-                <h2 className="page-title">Buy Lead Tracker</h2>
+                <h3 style={{ marginBottom: "20px" }}>
+                    {loading ? <Skeleton width={200} /> : "Leads Tracker"}
+                </h3>
 
                 <TableToolbar
                     search={search}

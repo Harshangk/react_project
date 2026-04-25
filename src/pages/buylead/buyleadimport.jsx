@@ -17,7 +17,7 @@ export default function ImportLead() {
     const {
         handleSubmit,
         control,
-        register, // ✅ FIXED (was missing)
+        register,
         watch,
         formState: { errors },
     } = useForm();
@@ -97,9 +97,6 @@ export default function ImportLead() {
         fetchBrokers();
     }, [isBroker]);
 
-    // -----------------------------
-    // SUBMIT
-    // -----------------------------
     const onSubmit = async (data) => {
         try {
             if (!file) {
@@ -145,13 +142,9 @@ export default function ImportLead() {
     return (
         <MainLayout>
             <div className="content">
-                <h2 style={{ marginBottom: "20px" }}>
-                    {loading ? (
-                        <Skeleton width={200} />
-                    ) : (
-                        "Buy Lead Bulk Upload"
-                    )}
-                </h2>
+                <h3 style={{ marginBottom: "20px" }}>
+                    {loading ? <Skeleton width={200} /> : "Leads Import"}
+                </h3>
 
                 <form
                     onSubmit={handleSubmit(onSubmit)}

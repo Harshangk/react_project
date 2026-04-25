@@ -319,9 +319,9 @@ export default function BuyUntouchedList() {
 
         < MainLayout >
             <div className="content">
-                <h2 style={{ marginBottom: "20px" }}>
-                    {loading ? <Skeleton width={200} /> : "Untouched Buy Lead Lists"}
-                </h2>
+                <h3 style={{ marginBottom: "20px" }}>
+                    {loading ? <Skeleton width={200} /> : "Search Untouched Leads"}
+                </h3>
                 <TableToolbar
                     search={search}
                     setSearch={setSearch}

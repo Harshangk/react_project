@@ -319,9 +319,9 @@ export default function BuyReallocationList() {
 
         < MainLayout >
             <div className="content">
-                <h2 style={{ marginBottom: "20px" }}>
-                    {loading ? <Skeleton width={200} /> : "Re-Allocation Buy Lead Lists"}
-                </h2>
+                <h3 style={{ marginBottom: "20px" }}>
+                    {loading ? <Skeleton width={200} /> : "Search Re-Allocation Leads"}
+                </h3>
                 <TableToolbar
                     search={search}
                     setSearch={setSearch}
