@@ -1,5 +1,5 @@
 import { Search, Download, LayoutGrid, Table } from "lucide-react";
-import { getBuyLeadExport } from "../../api/services";
+// import { getBuyLeadExport } from "../../api/services";
 import { useState } from "react";
 
 export default function TableToolbar({
@@ -7,6 +7,7 @@ export default function TableToolbar({
     setSearch,
     view,
     setView,
+    onExport,
     showSelectAll = false,
     onSelectAll = () => { },
     isAllSelected = false,
@@ -15,34 +16,18 @@ export default function TableToolbar({
     const [exporting, setExporting] = useState(false);
 
     const handleExport = async () => {
+        if (!onExport) return;
+
         try {
             setExporting(true);
-
-            const res = await getBuyLeadExport({
-                search: search || undefined,
-                sort_by: "id",
-                sort_order: "desc",
-            });
-
-            const blob = new Blob([res.data], { type: "text/csv" });
-            const url = window.URL.createObjectURL(blob);
-
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `buy_leads_${Date.now()}.csv`;
-
-            document.body.appendChild(link);
-            link.click();
-
-            link.remove();
-            window.URL.revokeObjectURL(url);
-
+            await onExport();
         } catch (err) {
             console.error("Export failed", err);
         } finally {
             setExporting(false);
         }
     };
+
 
     return (
         <div className="table-toolbar">

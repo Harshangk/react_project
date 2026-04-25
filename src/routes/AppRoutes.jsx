@@ -4,8 +4,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "../pages/auth/login";
 import Dashboard from "../pages/dashboard/dashboard";
 import BuyLeadForm from "../pages/buylead/buylead";
+import BuyImportLead from "../pages/buylead/buyleadimport";
 import ProtectedRoute from "./ProtectedRoute";
 import BuyLeadList from "../pages/buylead/buyleadlist";
+import BuyLeadImportList from "../pages/buylead/buyleadtracker";
 import UntouchedBuyList from "../pages/buylead/untouchedlist";
 import ReallocationBuyList from "../pages/buylead/buyleadreallocationlist";
 import BuyFollowupLeadList from "../pages/buylead/buyleadfollowuplist";
@@ -37,6 +39,14 @@ function AppRoutes() {
                     }
                 />
                 <Route
+                    path="/leads/buyleadimport"
+                    element={
+                        <ProtectedRoute>
+                            <BuyImportLead />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
                     path="/leads/buylead/:id"
                     element={
                         <ProtectedRoute>
@@ -49,6 +59,14 @@ function AppRoutes() {
                     element={
                         <ProtectedRoute>
                             <BuyLeadList />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/leads/buyleadtracker"
+                    element={
+                        <ProtectedRoute>
+                            <BuyLeadImportList />
                         </ProtectedRoute>
                     }
                 />

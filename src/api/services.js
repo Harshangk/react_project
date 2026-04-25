@@ -104,6 +104,48 @@ export const getBuyFollowupLeadByID = (leadId) => {
     return API.get(`/v1/poc/buy/followup/lead/${leadId}`);
 };
 
+export const importBuyLead = (formData, onUploadProgress) => {
+    return API.post("/v1/poc/buy/import", formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (progressEvent) => {
+            if (!progressEvent.total) return;
+
+            const percent = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+            );
+
+            if (onUploadProgress) {
+                onUploadProgress(percent);
+            }
+        },
+    });
+};
+
+export const getBuyImportLeads = (params = {}) => {
+    return API.get("/v1/poc/buy/import", {
+        params: params,
+    });
+};
+
+export const downloadImportFile = (fileKey, bucket) => {
+    return API.get(
+        `/v1/poc/common/import/${encodeURIComponent(fileKey)}/download`,
+        {
+            params: { bucket },
+            responseType: "blob",
+        }
+    );
+};
+
+export const getBuyImportLeadExport = (params = {}) => {
+    return API.get("/v1/poc/buy/import/export", {
+        params: params,
+        responseType: "blob",
+    });
+};
+
 //#region Enum
 export const getAllEnums = () => {
     return API.get("/v1/poc/common/all");

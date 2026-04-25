@@ -7,7 +7,7 @@ import TableToolbar from "../../components/common/TableToolbar";
 import ActionMenu from "../../components/common/ActionMenu";
 import Avatar from "../../components/common/Avatar";
 import { formatDateTime } from "../../utils/formatDate";
-import { getBuyLeads, deleteBuyLead } from "../../api/services";
+import { getBuyLeads, deleteBuyLead, getBuyLeadExport } from "../../api/services";
 import ConfirmModal from "../../components/common/ConfirmModal";
 import { toast } from "react-toastify";
 
@@ -66,6 +66,26 @@ export default function BuyLeadList() {
         setDeleteId(null);
     };
 
+    const handleExport = async () => {
+        const res = await getBuyLeadExport({
+            search: search || undefined,
+            sort_by: "id",
+            sort_order: "desc",
+        });
+
+        const blob = new Blob([res.data], { type: "text/csv" });
+        const url = window.URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `buy_leads_${Date.now()}.csv`;
+
+        document.body.appendChild(link);
+        link.click();
+
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    };
 
     const [cursor, setCursor] = useState(null);
     const [nextCursor, setNextCursor] = useState(null);
@@ -199,6 +219,7 @@ export default function BuyLeadList() {
                     setSearch={setSearch}
                     view={view}
                     setView={setView}
+                    onExport={handleExport}
                 />
 
                 <div className="table-container">
