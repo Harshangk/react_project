@@ -1,3 +1,4 @@
+import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout";
@@ -7,23 +8,65 @@ import TableToolbar from "../../components/common/TableToolbar";
 import ActionMenu from "../../components/common/ActionMenu";
 import Avatar from "../../components/common/Avatar";
 import { formatDateTime } from "../../utils/formatDate";
-import { getBuyLeads, deleteBuyLead, getBuyLeadExport } from "../../api/services";
+import FormSelectSearch from "../../components/common/FormSelectSearch";
+import { getBuyLeads, deleteBuyLead, getUser, patchBuyLeadAllocation } from "../../api/services";
 import ConfirmModal from "../../components/common/ConfirmModal";
 import { toast } from "react-toastify";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 
-export default function BuyLeadList() {
+export default function BuyLeadLostList() {
     const navigate = useNavigate();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const [search, setSearch] = useState("");
+    const [status, setStatus] = useState("Lost");
     const [pageSize, setPageSize] = useState(10);
 
     const [deleteId, setDeleteId] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
+
+    const [executive, setExecutives] = useState([]);
+    const [telecaller, setTelecallers] = useState([]);
+
+    const { control, watch, reset, formState: { errors } } = useForm();
+
+    const selectedTelecaller = watch("telecaller");
+    const selectedExecutive = watch("executive");
+
+    const getOptionalLabel = (options, value) => {
+        if (!value) return null;
+        return options.find(opt => opt.value === value)?.label || null;
+    };
+
+    const mapUser = (data = []) =>
+        data.map((item) => ({
+            value: item.id,
+            label: item.userName,
+        }));
     const [view, setView] = useState("table");
+
+    useEffect(() => {
+        const fetchEnums = async () => {
+            try {
+                const [exeRes, telRes] = await Promise.all([
+                    getUser(3),
+                    getUser(2),
+                ]);
+
+                setExecutives(mapUser(exeRes?.data?.items));
+                setTelecallers(mapUser(telRes?.data?.items));
+
+            } catch (err) {
+                console.error("API error:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        console.log("API CALLED");
+        fetchEnums();
+    }, []);
 
     const getStatusClass = (status) => {
         if (!status) return "badge";
@@ -36,6 +79,7 @@ export default function BuyLeadList() {
 
         return map[status.toLowerCase()] || "badge gray";
     };
+
     const getStageClass = (stage) => {
         if (!stage) return "badge";
 
@@ -48,9 +92,6 @@ export default function BuyLeadList() {
         };
 
         return map[stage.toLowerCase()] || "badge gray";
-    };
-    const handleEdit = (row) => {
-        navigate(`/leads/buylead/${row.id}`);
     };
 
     const handleDeleteClick = (row) => {
@@ -80,26 +121,6 @@ export default function BuyLeadList() {
         setDeleteId(null);
     };
 
-    const handleExport = async () => {
-        const res = await getBuyLeadExport({
-            search: search || undefined,
-            sort_by: "id",
-            sort_order: "desc",
-        });
-
-        const blob = new Blob([res.data], { type: "text/csv" });
-        const url = window.URL.createObjectURL(blob);
-
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `buy_leads_${Date.now()}.csv`;
-
-        document.body.appendChild(link);
-        link.click();
-
-        link.remove();
-        window.URL.revokeObjectURL(url);
-    };
 
     const [cursor, setCursor] = useState(null);
     const [nextCursor, setNextCursor] = useState(null);
@@ -115,6 +136,7 @@ export default function BuyLeadList() {
                 cursor: cursor,
                 limit: pageSize,
                 search: search,
+                buy_status: status,
                 sort_by: "id",
                 sort_order: "desc",
             });
@@ -152,7 +174,7 @@ export default function BuyLeadList() {
         }, search ? 500 : 0);
 
         return () => clearTimeout(delay);
-    }, [cursor, pageSize, search]);
+    }, [cursor, pageSize, search, status]);
 
     const handleNext = () => {
         if (!nextCursor) return;
@@ -171,7 +193,90 @@ export default function BuyLeadList() {
         setCursor(prevCursor);
     };
 
+    const [selectedIds, setSelectedIds] = useState([]);
+
+    const handleSelectRow = (id) => {
+        setSelectedIds((prev) =>
+            prev.includes(id)
+                ? prev.filter((item) => item !== id) // uncheck
+                : [...prev, id] // check
+        );
+    };
+
+    const handleSelectAll = () => {
+        const currentPageIds = data.map((row) => row.id);
+
+        const allSelected = currentPageIds.every((id) =>
+            selectedIds.includes(id)
+        );
+
+        if (allSelected) {
+            // unselect all
+            setSelectedIds((prev) =>
+                prev.filter((id) => !currentPageIds.includes(id))
+            );
+        } else {
+            // select all
+            setSelectedIds((prev) => [
+                ...new Set([...prev, ...currentPageIds]),
+            ]);
+        }
+    };
+
+    const handleReopen = async () => {
+        if (selectedIds.length === 0) {
+            toast.error("Please select at least one record");
+            return;
+        }
+        if (!selectedTelecaller && !selectedExecutive) {
+            toast.error("Select Telecaller or Executive");
+            return;
+        }
+        const payload = {
+            leadIds: selectedIds,
+            telecaller: getOptionalLabel(telecaller, selectedTelecaller),
+            executive: getOptionalLabel(executive, selectedExecutive),
+        };
+
+        console.log("Payload:", payload);
+        try {
+            const res = await patchBuyLeadAllocation(payload);
+            toast.success(res?.data?.message || "Success");
+            fetchLeads();
+            setSelectedIds([]);
+            reset({
+                telecaller: null,
+                executive: null
+            });
+        } catch (err) {
+            console.error("Submit error:", err);
+            const errorMessage =
+                err?.response?.data?.message || "Something went wrong";
+            toast.error(errorMessage);
+        }
+    };
+    console.log("Selected IDs:", selectedIds)
     const columns = [
+        {
+            key: "select",
+            label: (
+                <input
+                    type="checkbox"
+                    onChange={handleSelectAll}
+                    checked={
+                        data.length > 0 &&
+                        data.every((row) => selectedIds.includes(row.id))
+                    }
+                />
+            ),
+            render: (row) => (
+                <input
+                    type="checkbox"
+                    checked={selectedIds.includes(row.id)}
+                    onChange={() => handleSelectRow(row.id)}
+                />
+            ),
+        },
         { key: "id", label: "#" },
         {
             key: "status",
@@ -259,8 +364,9 @@ export default function BuyLeadList() {
             label: "#",
             render: (row) => (
                 <ActionMenu
-                    onView={() => console.log("View", row)}
-                    onEdit={() => handleEdit(row)}
+                    showView={false}
+                    showEdit={false}
+                    showDelete={true}
                     onDelete={() => handleDeleteClick(row)}
                 />
             ),
@@ -268,18 +374,24 @@ export default function BuyLeadList() {
     ];
 
     return (
-        <MainLayout>
+
+        < MainLayout >
             <div className="content">
                 <h3 style={{ marginBottom: "20px" }}>
-                    {loading ? <Skeleton width={200} /> : "Search Leads"}
+                    {loading ? <Skeleton width={200} /> : "Search Lost and DND Leads"}
                 </h3>
-
                 <TableToolbar
                     search={search}
                     setSearch={setSearch}
                     view={view}
                     setView={setView}
-                    onExport={handleExport}
+                    showSelectAll={true}
+                    onSelectAll={handleSelectAll}
+                    isAllSelected={
+                        data.length > 0 &&
+                        data.every((row) => selectedIds.includes(row.id))
+                    }
+                    selectedCount={selectedIds.length}
                 />
 
                 <div className="table-container">
@@ -293,13 +405,17 @@ export default function BuyLeadList() {
                         <div className="card-view">
                             {data.map((row) => {
                                 const lf = row.leadFollowup || {};
-
                                 return (
                                     <div key={row.id} className="lead-card">
 
                                         {/* HEADER */}
                                         <div className="card-header">
                                             <div className="left">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedIds.includes(row.id)}
+                                                    onChange={() => handleSelectRow(row.id)}
+                                                />
                                                 <Avatar name={row.customerName} seed={row.id} />
                                                 <div>
                                                     <div className="lead-id">#{row.id}</div>
@@ -307,14 +423,14 @@ export default function BuyLeadList() {
                                                     <div className="mobile">{row.mobile || "-"}</div>
                                                 </div>
                                             </div>
-
                                             <div className="right">
                                                 <span className={`badge ${getStatusClass(row.status)}`}>
                                                     {row.status}
                                                 </span>
                                                 <ActionMenu
-                                                    onView={() => console.log("View", row)}
-                                                    onEdit={() => handleEdit(row)}
+                                                    showView={false}
+                                                    showEdit={false}
+                                                    showDelete={true}
                                                     onDelete={() => handleDeleteClick(row)}
                                                 />
                                             </div>
@@ -383,7 +499,10 @@ export default function BuyLeadList() {
                             })}
                         </div>
 
+
+
                     )}
+
 
                     <Pagination
                         total={total}
@@ -396,6 +515,85 @@ export default function BuyLeadList() {
                         currentPage={prevStack.length + 1}
                     />
                 </div>
+                <form
+                    className="card"
+                    style={{ width: "100%", marginTop: "20px" }}
+                >
+                    <div className="form-grid">
+                        {loading ? (
+                            Array.from({ length: 12 }).map((_, i) => (
+                                <Skeleton key={i} height={40} style={{ marginBottom: "12px" }} />
+                            ))
+                        ) : (
+                            <>
+                                <FormSelectSearch
+                                    label="Telecaller"
+                                    name="telecaller"
+                                    control={control}
+                                    options={telecaller}
+                                    rules={{ required: "Telecaller is required" }}
+                                    errors={errors}
+                                />
+
+                                <FormSelectSearch
+                                    label="Executive"
+                                    name="executive"
+                                    control={control}
+                                    options={executive}
+                                    rules={{ required: "Executive is required" }}
+                                    errors={errors}
+                                />
+                            </>
+                        )}
+                    </div>
+                    <div className="form-actions">
+
+                        {loading ? (
+                            <Skeleton height={45} width={120} />
+                        ) : (
+                            <>
+                                <div className="tooltip-wrapper">
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary"
+                                        disabled={
+                                            !selectedIds.length ||
+                                            selectedIds.length > 100 ||
+                                            (!selectedTelecaller && !selectedExecutive)
+                                        }
+                                        onClick={handleReopen}
+                                    >
+                                        Reopen
+                                    </button>
+
+                                    {/* TOOLTIP */}
+                                    {(
+                                        !selectedIds.length ||
+                                        selectedIds.length > 100 ||
+                                        (!selectedTelecaller && !selectedExecutive)
+                                    ) && (
+                                            <div className="tooltip-box">
+                                                {!selectedIds.length
+                                                    ? "Select at least one record"
+                                                    : selectedIds.length > 100
+                                                        ? "Maximum 100 records allowed"
+                                                        : "Select Telecaller or Executive"}
+                                            </div>
+                                        )}
+                                </div>
+                                <div className="tooltip-wrapper">
+                                    <button
+                                        type="button"
+                                        className="btn btn-cancel"
+                                        onClick={() => window.location.reload()}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </form>
                 <ConfirmModal
                     isOpen={!!deleteId}
                     title="Delete Lead"
@@ -405,6 +603,6 @@ export default function BuyLeadList() {
                     loading={deleteLoading}
                 />
             </div>
-        </MainLayout>
+        </MainLayout >
     );
 }

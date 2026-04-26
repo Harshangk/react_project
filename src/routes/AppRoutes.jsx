@@ -12,6 +12,7 @@ import UntouchedBuyList from "../pages/buylead/untouchedlist";
 import ReallocationBuyList from "../pages/buylead/buyleadreallocationlist";
 import BuyFollowupLeadList from "../pages/buylead/buyleadfollowuplist";
 import BuyFollowupLead from "../pages/buylead/buyleadfollowup";
+import LostBuyList from "../pages/buylead/buyleadlostlist";
 
 function AppRoutes() {
     return (
@@ -76,6 +77,15 @@ function AppRoutes() {
                     element={
                         <ProtectedRoute>
                             <UntouchedBuyList />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/leads/buyleadlostlist"
+                    element={
+                        <ProtectedRoute>
+                            <LostBuyList />
                         </ProtectedRoute>
                     }
                 />
