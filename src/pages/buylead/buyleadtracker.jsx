@@ -11,6 +11,7 @@ import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 
 export default function BuyLeadList() {
+    const [downloadingKey, setDownloadingKey] = useState(null);
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -127,40 +128,59 @@ export default function BuyLeadList() {
         {
             key: "processedRecords",
             label: "Processed",
-            render: (row) => (
-                <span
-                    style={{
-                        color: row.processedRecords ? "#2563eb" : "#9ca3af",
-                        cursor: row.processedRecords ? "pointer" : "not-allowed",
-                        textDecoration: row.processedRecords ? "underline" : "none",
-                    }}
-                    onClick={() =>
-                        row.processedRecords &&
-                        handleDownload(row.s3Key, "buyleadfile")
-                    }
-                >
-                    {row.processedRecords}
-                </span>
-            ),
+            render: (row) => {
+                const isDownloading = downloadingKey === row.s3Key;
+
+                return (
+                    <span
+                        style={{
+                            color: row.processedRecords ? "#2563eb" : "#9ca3af",
+                            cursor:
+                                row.processedRecords && !isDownloading
+                                    ? "pointer"
+                                    : "not-allowed",
+                            textDecoration:
+                                row.processedRecords && !isDownloading ? "underline" : "none",
+                            opacity: isDownloading ? 0.6 : 1,
+                        }}
+                        onClick={() =>
+                            row.processedRecords &&
+                            !isDownloading &&
+                            handleDownload(row.s3Key, "buyleadfile")
+                        }
+                    >
+                        {isDownloading ? "Downloading..." : row.processedRecords}
+                    </span>
+                );
+            },
         },
         {
             key: "errorRecords",
             label: "Error",
-            render: (row) => (
-                <span
-                    style={{
-                        color: row.errorRecords ? "red" : "#9ca3af",
-                        cursor: row.errorRecords ? "pointer" : "not-allowed",
-                        textDecoration: row.errorRecords ? "underline" : "none",
-                    }}
-                    onClick={() =>
-                        row.errorRecords &&
-                        handleDownload(row.errorS3Key, "errorbuyleadfile")
-                    }
-                >
-                    {row.errorRecords}
-                </span>
-            ),
+            render: (row) => {
+                const isDownloading = downloadingKey === row.errorS3Key;
+
+                return (
+                    <span
+                        style={{
+                            color: row.errorRecords ? "red" : "#9ca3af",
+                            cursor:
+                                row.errorRecords && !isDownloading
+                                    ? "pointer"
+                                    : "not-allowed",
+                            textDecoration: row.errorRecords ? "underline" : "none",
+                            opacity: isDownloading ? 0.6 : 1,
+                        }}
+                        onClick={() =>
+                            row.errorRecords &&
+                            !isDownloading &&
+                            handleDownload(row.errorS3Key, "errorbuyleadfile")
+                        }
+                    >
+                        {isDownloading ? "Downloading..." : row.errorRecords}
+                    </span>
+                );
+            },
         },
 
         { key: "errorS3Key", label: "Error Key" },
@@ -182,8 +202,12 @@ export default function BuyLeadList() {
 
 
     const handleDownload = async (fileKey, bucket) => {
+        if (!fileKey || downloadingKey === fileKey) return;
+
         try {
-            if (!fileKey) return;
+            setDownloadingKey(fileKey);
+
+            const toastId = toast.loading("Downloading file...");
 
             const res = await downloadImportFile(fileKey, bucket);
 
@@ -193,17 +217,22 @@ export default function BuyLeadList() {
             const link = document.createElement("a");
             link.href = url;
             link.download = fileKey.split("/").pop();
+
             document.body.appendChild(link);
             link.click();
             link.remove();
 
+            window.URL.revokeObjectURL(url);
+
+            toast.success("Download completed");
+
         } catch (err) {
             console.error(err);
             toast.error("Download failed");
+        } finally {
+            setDownloadingKey(null);
         }
     };
-
-
 
 
     return (
@@ -255,46 +284,65 @@ export default function BuyLeadList() {
                                     <div className="import-stats">
 
                                         {/* PROCESSED */}
-                                        <div
-                                            className="stat success"
-                                            style={{
-                                                cursor: row.processedRecords ? "pointer" : "not-allowed",
-                                                opacity: row.processedRecords ? 1 : 0.6,
-                                            }}
-                                            onClick={() =>
-                                                row.processedRecords &&
-                                                handleDownload(row.s3Key, "buyleadfile")
-                                            }
-                                            title={
-                                                row.processedRecords
-                                                    ? "Download processed file"
-                                                    : "No processed records"
-                                            }
-                                        >
-                                            <div className="stat-value">{row.processedRecords}</div>
-                                            <div className="stat-label">Processed</div>
-                                        </div>
+                                        {(() => {
+                                            const isDownloading = downloadingKey === row.s3Key;
+
+                                            return (
+                                                <div
+                                                    className="stat success"
+                                                    style={{
+                                                        cursor:
+                                                            row.processedRecords && !isDownloading
+                                                                ? "pointer"
+                                                                : "not-allowed",
+                                                        opacity: row.processedRecords ? 1 : 0.6,
+                                                    }}
+                                                    onClick={() =>
+                                                        row.processedRecords &&
+                                                        !isDownloading &&
+                                                        handleDownload(row.s3Key, "buyleadfile")
+                                                    }
+                                                >
+                                                    <div className="stat-value">
+                                                        {isDownloading ? "..." : row.processedRecords}
+                                                    </div>
+                                                    <div className="stat-label">
+                                                        {isDownloading ? "Downloading..." : "Processed"}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
 
                                         {/* ERROR */}
-                                        <div
-                                            className="stat error"
-                                            style={{
-                                                cursor: row.errorRecords ? "pointer" : "not-allowed",
-                                                opacity: row.errorRecords ? 1 : 0.6,
-                                            }}
-                                            onClick={() =>
-                                                row.errorRecords &&
-                                                handleDownload(row.errorS3Key, "errorbuyleadfile")
-                                            }
-                                            title={
-                                                row.errorRecords
-                                                    ? "Download error file"
-                                                    : "No error records"
-                                            }
-                                        >
-                                            <div className="stat-value">{row.errorRecords}</div>
-                                            <div className="stat-label">Errors</div>
-                                        </div>
+                                        {(() => {
+                                            const isDownloading = downloadingKey === row.errorS3Key;
+
+                                            return (
+                                                <div
+                                                    className="stat error"
+                                                    style={{
+                                                        cursor:
+                                                            row.errorRecords && !isDownloading
+                                                                ? "pointer"
+                                                                : "not-allowed",
+                                                        opacity: row.errorRecords ? 1 : 0.6,
+                                                    }}
+                                                    onClick={() =>
+                                                        row.errorRecords &&
+                                                        !isDownloading &&
+                                                        handleDownload(row.errorS3Key, "errorbuyleadfile")
+                                                    }
+                                                >
+                                                    <div className="stat-value">
+                                                        {isDownloading ? "..." : row.errorRecords}
+                                                    </div>
+                                                    <div className="stat-label">
+                                                        {isDownloading ? "Downloading..." : "Errors"}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+
 
                                     </div>
 

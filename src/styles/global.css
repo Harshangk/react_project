@@ -627,6 +627,21 @@ body.dark {
     background: #22c55e;
 }
 
+/* UNDER FOLLOWUP (PURPLE THEME) */
+.badge.purple {
+    background: #f3e8ff;
+    /* light purple background */
+    color: #7c3aed;
+    /* primary purple text */
+    border-color: #d8b4fe;
+    /* soft purple border */
+}
+
+.badge.purple::before {
+    background: #7c3aed;
+    /* purple dot */
+}
+
 /* NOT ALLOCATED */
 .badge.orange {
     background: #fffbeb;
@@ -1620,4 +1635,103 @@ body.dark {
     padding: 8px 0;
     border-bottom: 1px solid #eee;
     margin-bottom: 8px;
+}
+
+/* ================= TABS (PRODUCTION GRADE) ================= */
+
+/* Wrapper (align with toolbar) */
+.tabs-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+/* Tabs base */
+.tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 4px;
+    border-radius: 12px;
+
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Individual tab */
+.tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 8px 16px;
+
+    font-size: 13px;
+    font-weight: 500;
+
+    color: #64748b;
+    background: transparent;
+
+    border: none;
+    border-radius: 10px;
+
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Hover */
+.tab:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-main);
+}
+
+/* Active */
+.tab.active {
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: #ffffff;
+
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+}
+
+/* Badge (count) */
+.tab-badge {
+    font-size: 11px;
+    font-weight: 600;
+
+    padding: 2px 8px;
+    border-radius: 999px;
+
+    background: rgba(0, 0, 0, 0.08);
+    color: #334155;
+
+    transition: all 0.2s ease;
+}
+
+/* Active badge */
+.tab.active .tab-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+/* Dark mode support */
+body.dark .tabs {
+    background: #0f172a;
+    border-color: #1e293b;
+}
+
+body.dark .tab {
+    color: #94a3b8;
+}
+
+body.dark .tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark .tab-badge {
+    background: rgba(255, 255, 255, 0.1);
+    color: #cbd5f5;
 }

@@ -83,6 +83,10 @@ export const patchBuyLeadReallocation = (data) => {
     return API.patch("/v1/poc/buy/re-allocation", data);
 };
 
+export const patchBuyLeadReopen = (data) => {
+    return API.patch("/v1/poc/buy/reopen", data);
+};
+
 export const postBuyLeadFollowup = (leadId, data) => {
     return API.post(`/v1/poc/buy/${leadId}/followup`, data);
 };

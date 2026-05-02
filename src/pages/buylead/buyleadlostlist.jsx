@@ -9,7 +9,7 @@ import ActionMenu from "../../components/common/ActionMenu";
 import Avatar from "../../components/common/Avatar";
 import { formatDateTime } from "../../utils/formatDate";
 import FormSelectSearch from "../../components/common/FormSelectSearch";
-import { getBuyLeads, deleteBuyLead, getUser, patchBuyLeadAllocation } from "../../api/services";
+import { getBuyLeads, deleteBuyLead, getUser, patchBuyLeadReopen } from "../../api/services";
 import ConfirmModal from "../../components/common/ConfirmModal";
 import { toast } from "react-toastify";
 import Skeleton from "react-loading-skeleton";
@@ -17,11 +17,23 @@ import "react-loading-skeleton/dist/skeleton.css";
 
 export default function BuyLeadLostList() {
     const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState("Lost");
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const [search, setSearch] = useState("");
-    const [status, setStatus] = useState("Lost");
+    const [tabCounts, setTabCounts] = useState({
+        Lost: 0,
+        DND: 0,
+    });
+    const handleTabChange = (tab) => {
+        if (tab === activeTab) return; // avoid unnecessary API calls
+
+        setActiveTab(tab);
+        setCursor(null);
+        setPrevStack([]);
+        setSelectedIds([]);
+    };
     const [pageSize, setPageSize] = useState(10);
 
     const [deleteId, setDeleteId] = useState(null);
@@ -75,6 +87,8 @@ export default function BuyLeadLostList() {
             notallocated: "badge orange",
             allocated: "badge green",
             lost: "badge red",
+            dnd: "badge red",
+
         };
 
         return map[status.toLowerCase()] || "badge gray";
@@ -136,7 +150,7 @@ export default function BuyLeadLostList() {
                 cursor: cursor,
                 limit: pageSize,
                 search: search,
-                buy_status: status,
+                buy_status: activeTab,
                 sort_by: "id",
                 sort_order: "desc",
             });
@@ -144,7 +158,13 @@ export default function BuyLeadLostList() {
             const result = res.data;
 
             setData(result.items || []);
+
             setTotal(result.total || 0);
+
+            setTabCounts((prev) => ({
+                ...prev,
+                [activeTab]: result.total || 0,
+            }));
 
             if (result.next && result.items?.length > 0) {
                 const queryString = result.next.split("?")[1];
@@ -174,7 +194,7 @@ export default function BuyLeadLostList() {
         }, search ? 500 : 0);
 
         return () => clearTimeout(delay);
-    }, [cursor, pageSize, search, status]);
+    }, [cursor, pageSize, search, activeTab]);
 
     const handleNext = () => {
         if (!nextCursor) return;
@@ -240,7 +260,7 @@ export default function BuyLeadLostList() {
 
         console.log("Payload:", payload);
         try {
-            const res = await patchBuyLeadAllocation(payload);
+            const res = await patchBuyLeadReopen(payload);
             toast.success(res?.data?.message || "Success");
             fetchLeads();
             setSelectedIds([]);
@@ -378,8 +398,27 @@ export default function BuyLeadLostList() {
         < MainLayout >
             <div className="content">
                 <h3 style={{ marginBottom: "20px" }}>
-                    {loading ? <Skeleton width={200} /> : "Search Lost and DND Leads"}
+                    {loading ? <Skeleton width={200} /> : `Search ${activeTab} Leads`}
                 </h3>
+                <div className="tabs-container">
+                    <div className="tabs">
+                        <button
+                            className={`tab ${activeTab === "Lost" ? "active" : ""}`}
+                            onClick={() => handleTabChange("Lost")}
+                        >
+                            Lost
+                            <span className="tab-badge">{tabCounts.Lost}</span>
+                        </button>
+
+                        <button
+                            className={`tab ${activeTab === "DND" ? "active" : ""}`}
+                            onClick={() => handleTabChange("DND")}
+                        >
+                            DND
+                            <span className="tab-badge">{tabCounts.DND}</span>
+                        </button>
+                    </div>
+                </div>
                 <TableToolbar
                     search={search}
                     setSearch={setSearch}

@@ -13,6 +13,18 @@ import "react-loading-skeleton/dist/skeleton.css";
 
 export default function BuyFollowupLeadList() {
     const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState("Fresh");
+    const [tabCounts, setTabCounts] = useState({
+        Fresh: 0,
+        Appointment: 0,
+        UnderFollowup: 0,
+    });
+
+    const TABS = [
+        { key: "Fresh", label: "Fresh" },
+        { key: "Appointment", label: "Appointment" },
+        { key: "UnderFollowup", label: "Under Followup" },
+    ];
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -27,7 +39,9 @@ export default function BuyFollowupLeadList() {
         const map = {
             notallocated: "badge orange",
             allocated: "badge green",
+            appointment: "badge green",
             lost: "badge red",
+            dnd: "badge red",
         };
 
         return map[status.toLowerCase()] || "badge gray";
@@ -35,7 +49,7 @@ export default function BuyFollowupLeadList() {
 
     const getStageClass = (stage) => {
         if (!stage) return "badge";
-
+        const key = stage.toLowerCase();
         const map = {
             fresh: "badge orange",
             underfollowup: "badge purple",
@@ -54,6 +68,7 @@ export default function BuyFollowupLeadList() {
     const handleExport = async () => {
         const res = await getBuyFollowupLeadExport({
             search: search || undefined,
+            buy_stage: activeTab,
             sort_by: "id",
             sort_order: "desc",
         });
@@ -78,7 +93,7 @@ export default function BuyFollowupLeadList() {
 
     const [total, setTotal] = useState(0);
 
-    const fetchLeads = async () => {
+    const fetchLeads = async (signal) => {
         try {
             setLoading(true);
 
@@ -86,13 +101,17 @@ export default function BuyFollowupLeadList() {
                 cursor: cursor,
                 limit: pageSize,
                 search: search,
+                buy_stage: activeTab,
             });
-
+            if (signal?.aborted) return;
             const result = res.data;
 
             setData(result.items || []);
             setTotal(result.total || 0);
-
+            setTabCounts((prev) => ({
+                ...prev,
+                [activeTab]: result.total || 0,
+            }));
             if (result.next && result.items?.length > 0) {
                 const queryString = result.next.split("?")[1];
                 const params = new URLSearchParams(queryString);
@@ -114,14 +133,19 @@ export default function BuyFollowupLeadList() {
     };
 
     useEffect(() => {
-        const delay = setTimeout(() => {
-            if (search.length === 0 || search.length >= 4) {
-                fetchLeads();
-            }
-        }, search ? 500 : 0);
+        const controller = new AbortController();
 
-        return () => clearTimeout(delay);
-    }, [cursor, pageSize, search]);
+        const delay = setTimeout(() => {
+            if (search.length === 0 || search.length >= 3) {
+                fetchLeads(controller.signal);
+            }
+        }, search ? 400 : 0);
+
+        return () => {
+            controller.abort();
+            clearTimeout(delay);
+        };
+    }, [cursor, pageSize, search, activeTab]);
 
     const handleNext = () => {
         if (!nextCursor) return;
@@ -230,9 +254,32 @@ export default function BuyFollowupLeadList() {
         <MainLayout>
             <div className="content">
                 <h3 style={{ marginBottom: "20px" }}>
-                    {loading ? <Skeleton width={200} /> : "Search Followup Leads"}
+                    {loading ? <Skeleton width={200} /> : `Search ${activeTab} Leads`}
                 </h3>
+                <div className="tabs-container">
+                    <div className="tabs">
+                        {TABS.map((tab) => (
+                            <button
+                                key={tab.key}
+                                className={`tab ${activeTab === tab.key ? "active" : ""}`}
+                                onClick={() => {
+                                    if (activeTab === tab.key) return;
 
+                                    setActiveTab(tab.key);
+                                    setCursor(null);
+                                    setPrevStack([]);
+                                    setNextCursor(null);
+                                }}
+                            >
+                                {tab.label}
+                                <span className="tab-badge">
+                                    {tabCounts[tab.key]}
+                                </span>
+                            </button>
+                        ))}
+
+                    </div>
+                </div>
                 <TableToolbar
                     search={search}
                     setSearch={setSearch}

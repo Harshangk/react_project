@@ -62,7 +62,7 @@ export default function BuyLeadFollowupForm() {
     const isHome = selectedMode === "home";
     const isBranch = selectedMode === "branch";
     const isAppointment = selectedDisposition === "appointment";
-    const isCallDate = ["appointment", "under followup"].includes(selectedStage);
+    const isCallDate = ["appointment", "underfollowup"].includes(selectedStage);
     const isExecutiveRequired = isBranch || isHome || isAppointment;
     const isStateRequired = isHome;
     const isCityRequired = isHome;
