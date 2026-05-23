@@ -12,6 +12,10 @@ export const getLeadSources = () => {
     return API.get("/v1/poc/common/lead-source");
 };
 
+export const getLeadCategory = () => {
+    return API.get("/v1/poc/common/category");
+};
+
 export const getMake = () => {
     return API.get("/v1/poc/common/make");
 };

@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { useState, useEffect } from "react";
-import { postBuyLead, putBuyLead, getBuyLeadByID, getLeadSources, getBuyModes, getFuelTypes, getColor, getOwner, getMake, getModel, getYear, getUser, getBroker, getBranch, getState, getCity } from "../../api/services";
+import { postBuyLead, putBuyLead, getBuyLeadByID, getLeadSources, getLeadCategory, getBuyModes, getFuelTypes, getColor, getOwner, getMake, getModel, getYear, getUser, getBroker, getBranch, getState, getCity } from "../../api/services";
 import { toast } from "react-toastify";
 import { clearErrors, trigger } from "react-hook-form";
 import { useParams } from "react-router-dom";
@@ -30,6 +30,7 @@ export default function BuyLeadForm() {
 
     const [loading, setLoading] = useState(true);
     const [leadSources, setLeadSources] = useState([]);
+    const [leadCategories, setLeadCategories] = useState([]);
     const [modes, setModes] = useState([]);
     const [fuelTypes, setFuelTypes] = useState([]);
     const [colors, setColors] = useState([]);
@@ -234,6 +235,7 @@ export default function BuyLeadForm() {
                 setValue("customerName", data.customerName);
                 setValue("mobile", data.mobile);
                 setValue("alternateMobile", data.alternateMobile);
+                setValue("category", data.category);
                 setValue("mode", data.mode);
                 setValue("make", data.makeId);
                 setValue("fuelType", data.fuelType);
@@ -338,9 +340,10 @@ export default function BuyLeadForm() {
     useEffect(() => {
         const fetchEnums = async () => {
             try {
-                const [leadRes, modeRes, fuelRes, colorRes, ownerRes, makeRes, yearRes, exeRes, telRes, branchRes, stateRes] = await Promise.all([
+                const [leadRes, modeRes, categoryRes, fuelRes, colorRes, ownerRes, makeRes, yearRes, exeRes, telRes, branchRes, stateRes] = await Promise.all([
                     getLeadSources(),
                     getBuyModes(),
+                    getLeadCategory(),
                     getFuelTypes(),
                     getColor(),
                     getOwner(),
@@ -354,6 +357,7 @@ export default function BuyLeadForm() {
 
                 setLeadSources(mapLeadSource(leadRes?.data?.items))
                 setModes(formatOptions(modeRes?.data));
+                setLeadCategories(formatOptions(categoryRes?.data));
                 setFuelTypes(formatOptions(fuelRes?.data));
                 setColors(formatOptions(colorRes?.data));
                 setOwners(formatOptions(ownerRes?.data));
@@ -384,8 +388,11 @@ export default function BuyLeadForm() {
                 alternateMobile: data.alternateMobile,
                 source: getOptionalLabel(leadSources, data.source),
                 mode: data.mode,
+                category: data.category,
                 brokerName: isBroker ? getOptionalLabel(broker, data.broker) : null,
                 customerName: data.customerName,
+                ownerName: data.customerName,
+                paymentName: data.customerName,
 
                 leadAddress: data.address
                     ? {
@@ -402,7 +409,8 @@ export default function BuyLeadForm() {
                 variant: data.variant,
                 color: data.color,
                 fuelType: data.fuelType,
-                year: String(data.year),
+                mfgMonth: "January",
+                mfgYear: String(data.year),
                 kms: Number(data.kms),
                 owner: data.owner,
                 clientOffer: Number(data.clientOffer),
@@ -424,9 +432,21 @@ export default function BuyLeadForm() {
 
         } catch (err) {
             console.error("Submit error:", err);
-            const errorMessage =
-                err?.response?.data?.message || "Something went wrong";
-            toast.error(errorMessage);
+            const detail = err?.response?.data?.detail;
+
+            if (detail?.message) {
+                toast.error(
+                    <div>
+                        <p><strong>{detail.message}</strong></p>
+                        <p>Lead ID: {detail.lead_id}</p>
+                        <p>Status: {detail.status}</p>
+                        <p>Telecaller: {detail.telecaller ?? "Not Assigned"}</p>
+                        <p>Executive: {detail.executive ?? "Not Assigned"}</p>
+                    </div>
+                );
+            } else {
+                toast.error("Something went wrong");
+            }
         }
     };
 
@@ -515,6 +535,16 @@ export default function BuyLeadForm() {
                                     rules={{ required: "Source is required" }}
                                     options={leadSources}
                                     errors={errors}
+                                />
+
+                                <FormSelectSearch
+                                    label="Category"
+                                    name="category"
+                                    control={control}
+                                    rules={{ required: "Category is required" }}
+                                    options={leadCategories}
+                                    errors={errors}
+                                    isDisabled={isEdit}
                                 />
 
                                 <FormInput
