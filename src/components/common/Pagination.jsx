@@ -1,3 +1,5 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 export default function Pagination({
     total,
     pageSize,
@@ -10,21 +12,18 @@ export default function Pagination({
 }) {
     return (
         <div className="pagination">
-            {/* LEFT */}
             <div className="pagination-left">
                 <span>
-                    Page {currentPage} • Total {total} records
+                    Page {currentPage} - Total {total} records
                 </span>
             </div>
 
-            {/* RIGHT */}
             <div className="pagination-right">
-                {/* Rows */}
                 <div className="rows-dropdown">
                     <span>Rows</span>
                     <select
                         value={pageSize}
-                        onChange={(e) => setPageSize(Number(e.target.value))}
+                        onChange={(event) => setPageSize(Number(event.target.value))}
                     >
                         <option value={5}>5</option>
                         <option value={10}>10</option>
@@ -33,22 +32,25 @@ export default function Pagination({
                     </select>
                 </div>
 
-                {/* Buttons */}
                 <div className="pagination-controls">
                     <button
+                        type="button"
                         className="nav-btn"
                         onClick={handlePrev}
                         disabled={!hasPrev}
                     >
-                        ← Previous
+                        <ChevronLeft size={16} />
+                        Previous
                     </button>
 
                     <button
+                        type="button"
                         className="nav-btn"
                         onClick={handleNext}
                         disabled={!hasNext}
                     >
-                        Next →
+                        Next
+                        <ChevronRight size={16} />
                     </button>
                 </div>
             </div>

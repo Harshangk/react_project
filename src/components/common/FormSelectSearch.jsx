@@ -10,6 +10,7 @@ function FormSelectSearch({
     errors,
     onChangeExtra,   // ✅ for dependent dropdown
     isDisabled = false,
+    isLoading = false,
     isClearable = true,
 }) {
     if (!control) {
@@ -31,6 +32,7 @@ function FormSelectSearch({
                         options={options}
                         isSearchable
                         isDisabled={isDisabled}
+                        isLoading={isLoading}
                         isClearable={isClearable}
                         placeholder={`Select ${label}`}
                         className={

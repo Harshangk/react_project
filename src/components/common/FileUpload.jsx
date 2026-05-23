@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { FileText, UploadCloud, X } from "lucide-react";
 
 export default function FileUpload({
     onFileSelect,
@@ -10,21 +11,22 @@ export default function FileUpload({
     const inputRef = useRef(null);
     const [isDragging, setIsDragging] = useState(false);
 
-    const handleDrop = (e) => {
-        e.preventDefault();
+    const handleDrop = (event) => {
+        event.preventDefault();
         setIsDragging(false);
 
-        const selectedFile = e.dataTransfer.files?.[0];
+        const selectedFile = event.dataTransfer.files?.[0];
         if (selectedFile) onFileSelect(selectedFile);
     };
 
-    const handleChange = (e) => {
-        const selectedFile = e.target.files?.[0];
+    const handleChange = (event) => {
+        const selectedFile = event.target.files?.[0];
         if (selectedFile) onFileSelect(selectedFile);
     };
 
     const formatSize = (size) => {
         if (!size) return "";
+
         const mb = size / 1024 / 1024;
         return mb < 1
             ? `${(size / 1024).toFixed(1)} KB`
@@ -33,34 +35,25 @@ export default function FileUpload({
 
     return (
         <div className="file-upload-wrapper">
-
-            {/* DROP AREA */}
             <div
                 className={`file-upload-box ${isDragging ? "drag-active" : ""}`}
                 onClick={() => inputRef.current?.click()}
                 onDrop={handleDrop}
-                onDragOver={(e) => {
-                    e.preventDefault();
+                onDragOver={(event) => {
+                    event.preventDefault();
                     setIsDragging(true);
                 }}
                 onDragLeave={() => setIsDragging(false)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        inputRef.current?.click();
+                    }
+                }}
             >
-                {/* ✅ SVG ICON (NO INTERNET REQUIRED) */}
-                <svg
-                    width="48"
-                    height="48"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="upload-svg"
-                >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" x2="12" y1="3" y2="15" />
-                </svg>
+                <UploadCloud size={46} className="upload-svg" />
 
                 <p className="upload-text">
                     Drop your CSV file here, or <b>browse</b>
@@ -79,11 +72,10 @@ export default function FileUpload({
                 />
             </div>
 
-            {/* ✅ CLEAN FILE INFO (BETTER UI) */}
             {file && (
                 <div className="file-card">
                     <div className="file-left">
-                        📄
+                        <FileText size={18} />
                     </div>
 
                     <div className="file-center">
@@ -91,16 +83,17 @@ export default function FileUpload({
                         <div className="file-size">{formatSize(file.size)}</div>
                     </div>
 
-                    <div
+                    <button
+                        type="button"
                         className="file-remove"
                         onClick={() => onFileSelect(null)}
+                        aria-label="Remove selected file"
                     >
-                        ✖
-                    </div>
+                        <X size={16} />
+                    </button>
                 </div>
             )}
 
-            {/* PROGRESS */}
             {uploading && (
                 <div className="progress-wrapper">
                     <div
@@ -111,7 +104,6 @@ export default function FileUpload({
                 </div>
             )}
 
-            {/* ERROR */}
             {error && <p className="error-text">{error}</p>}
         </div>
     );

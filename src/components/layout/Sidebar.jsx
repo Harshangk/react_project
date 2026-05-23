@@ -2,12 +2,12 @@ import React, { useEffect, useState } from "react";
 import { getMenu } from "../../api/services";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as Icons from "lucide-react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, X } from "lucide-react";
 import appConfig from "../../config/appConfig";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 
-function Sidebar() {
+function Sidebar({ isOpen = false, onClose }) {
     const [menu, setMenu] = useState([]);
     const [loading, setLoading] = useState(true);
     const [openMenu, setOpenMenu] = useState(null);
@@ -16,13 +16,14 @@ function Sidebar() {
     const location = useLocation();
 
     const isRouteMatch = (basePath, currentPath) => {
+        if (!basePath) return false;
+
         return (
             currentPath === basePath ||
             currentPath.startsWith(basePath + "/")
         );
     };
 
-    // 🔽 Fetch menu
     useEffect(() => {
         fetchMenu();
     }, []);
@@ -39,7 +40,6 @@ function Sidebar() {
         }
     };
 
-    // ✅ Auto-open based on route (FIXED)
     useEffect(() => {
         if (menu.length === 0) return;
 
@@ -58,17 +58,21 @@ function Sidebar() {
         }
     }, [location.pathname, menu]);
 
-    // 🔽 Handle click (FIXED)
+    const goTo = (path) => {
+        if (!path) return;
+
+        navigate(path);
+        onClose?.();
+    };
+
     const handleClick = (item) => {
         if (item.children?.length > 0) {
             setOpenMenu((prev) => (prev === item.id ? null : item.id));
-        } else if (item.menuPath) {
-            setOpenMenu(null); // close on navigation
-            navigate(item.menuPath);
+        } else {
+            goTo(item.menuPath);
         }
     };
 
-    // 🔽 Dynamic icon renderer
     const renderIcon = (iconName) => {
         if (!iconName) return null;
         const IconComponent = Icons[iconName];
@@ -76,26 +80,35 @@ function Sidebar() {
     };
 
     return (
-        <div className="sidebar">
-            {/* Logo */}
-            <h2 className="logo">
-                {loading ? (
-                    <Skeleton width={150} height={24} />
-                ) : (
-                    <>
-                        <img
-                            src={appConfig.logo}
-                            alt="logo"
-                            style={{ height: "24px", marginRight: "8px" }}
-                        />
-                        {appConfig.appName}
-                    </>
-                )}
-            </h2>
+        <aside className={`sidebar ${isOpen ? "open" : ""}`} aria-label="Main navigation">
+            <div className="sidebar-brand">
+                <h2 className="logo">
+                    {loading ? (
+                        <Skeleton width={150} height={24} />
+                    ) : (
+                        <>
+                            <img
+                                src={appConfig.logo}
+                                alt="logo"
+                                className="logo-img"
+                            />
+                            {appConfig.appName}
+                        </>
+                    )}
+                </h2>
+
+                <button
+                    type="button"
+                    className="icon-btn sidebar-close"
+                    onClick={onClose}
+                    aria-label="Close navigation"
+                >
+                    <X size={20} />
+                </button>
+            </div>
 
             <hr />
 
-            {/* Menu */}
             {loading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                     <Skeleton key={i} height={30} style={{ marginBottom: "12px" }} />
@@ -111,8 +124,8 @@ function Sidebar() {
 
                     return (
                         <div key={item.id}>
-                            {/* Parent */}
-                            <div
+                            <button
+                                type="button"
                                 className={`menu-item ${isParentActive ? "active" : ""}`}
                                 onClick={() => handleClick(item)}
                             >
@@ -126,9 +139,8 @@ function Sidebar() {
                                         ? <ChevronDown size={16} />
                                         : <ChevronRight size={16} />
                                 )}
-                            </div>
+                            </button>
 
-                            {/* Children */}
                             {openMenu === item.id && (
                                 <div className="submenu-container">
                                     {item.children?.map((child) => {
@@ -136,14 +148,15 @@ function Sidebar() {
                                             isRouteMatch(child.menuPath, location.pathname);
 
                                         return (
-                                            <div
+                                            <button
+                                                type="button"
                                                 key={child.id}
                                                 className={`submenu-item ${isActive ? "active" : ""}`}
-                                                onClick={() => navigate(child.menuPath)}
+                                                onClick={() => goTo(child.menuPath)}
                                             >
                                                 <span className="submenu-dot"></span>
                                                 {child.menuName}
-                                            </div>
+                                            </button>
                                         );
                                     })}
                                 </div>
@@ -152,7 +165,7 @@ function Sidebar() {
                     );
                 })
             )}
-        </div>
+        </aside>
     );
 }
 
