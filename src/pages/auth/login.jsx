@@ -31,8 +31,7 @@ function Login() {
 
         try {
             setLoading(true);
-            const res = await loginUser(form.username, form.password);
-            localStorage.setItem("access_token", res.data.access_token);
+            await loginUser(form.username, form.password);
             navigate("/dashboard");
         } catch (error) {
             toast.error("Invalid username or password");
