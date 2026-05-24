@@ -30,8 +30,9 @@ export default function BuyLeadList() {
 
         const map = {
             notallocated: "badge orange",
-            allocated: "badge green",
+            allocated: "badge purple",
             lost: "badge red",
+            stockin: "badge green",
         };
 
         return map[status.toLowerCase()] || "badge gray";
