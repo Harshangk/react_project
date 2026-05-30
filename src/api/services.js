@@ -101,6 +101,10 @@ export const getBuyFollowupLeads = (params = {}) => {
     });
 };
 
+export const getBuyFollowupLeadStatusCount = () => {
+    return API.get("/v1/poc/buy/followup/status/count");
+};
+
 export const getBuyFollowupLeadExport = (params = {}) => {
     return API.get("/v1/poc/buy/followup/export", {
         params: params,

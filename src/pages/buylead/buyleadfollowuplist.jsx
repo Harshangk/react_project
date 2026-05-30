@@ -7,7 +7,7 @@ import TableToolbar from "../../components/common/TableToolbar";
 import ActionMenu from "../../components/common/ActionMenu";
 import Avatar from "../../components/common/Avatar";
 import { formatDateTime } from "../../utils/formatDate";
-import { getBuyFollowupLeads, getBuyFollowupLeadExport } from "../../api/services";
+import { getBuyFollowupLeadStatusCount, getBuyFollowupLeads, getBuyFollowupLeadExport } from "../../api/services";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 
@@ -131,6 +131,31 @@ export default function BuyFollowupLeadList() {
             setLoading(false);
         }
     };
+
+    const fetchTabCounts = async () => {
+        try {
+            const res = await getBuyFollowupLeadStatusCount();
+
+            setTabCounts({
+                Fresh: 0,
+                Appointment: 0,
+                UnderFollowup: 0,
+                ...res.data,
+            });
+        } catch (err) {
+            console.error(err);
+
+            setTabCounts({
+                Fresh: 0,
+                Appointment: 0,
+                UnderFollowup: 0,
+            });
+        }
+    };
+
+    useEffect(() => {
+        fetchTabCounts();
+    }, []);
 
     useEffect(() => {
         const controller = new AbortController();

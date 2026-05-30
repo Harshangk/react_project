@@ -286,7 +286,7 @@ export default function BuyLeadFollowupForm() {
                 setValue("mode", data.mode);
                 setValue("make", data.makeId);
                 setValue("fuelType", data.fuelType);
-                setValue("year", data.year);
+                setValue("year", Number(data.mfgYear));
                 setValue("kms", data.kms);
                 setValue("owner", data.owner);
                 setValue("clientOffer", data.clientOffer);
@@ -449,7 +449,8 @@ export default function BuyLeadFollowupForm() {
                 variant: data.variant,
                 color: data.color,
                 fuelType: data.fuelType,
-                year: String(data.year),
+                mfgMonth: String("January"),
+                mfgYear: String(data.mfgYear),
                 kms: Number(data.kms),
                 owner: data.owner,
                 clientOffer: Number(data.clientOffer),
