@@ -301,7 +301,7 @@ label,
     pointer-events: none;
 }
 
-.login-showcase > * {
+.login-showcase>* {
     position: relative;
     z-index: 1;
 }
