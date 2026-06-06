@@ -381,7 +381,7 @@ export default function BuyLeadLostList() {
         },
         {
             key: "actions",
-            label: "#",
+            label: "Action",
             render: (row) => (
                 <ActionMenu
                     showView={false}

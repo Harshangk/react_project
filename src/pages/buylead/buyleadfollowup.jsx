@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { useState, useEffect } from "react";
-import { postBuyLeadFollowup, getBuyFollowupLeadByID, getBuyStage, getBuyStageDispositions, getPreferredTime, getLeadSources, getBuyModes, getFuelTypes, getColor, getOwner, getMake, getModel, getYear, getUser, getBroker, getBranch, getState, getCity } from "../../api/services";
+import { postBuyLeadFollowup, BuyLeadSentPrePrice, BuyLeadProvidePrePrice, getBuyFollowupLeadByID, getBuyStage, getBuyStageDispositions, getPreferredTime, getLeadSources, getBuyModes, getFuelTypes, getColor, getOwner, getMake, getModel, getYear, getUser, getBroker, getBranch, getState, getCity } from "../../api/services";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -55,6 +55,9 @@ export default function BuyLeadFollowupForm() {
     const [dispositionLoading, setDispositionLoading] = useState(false);
     const [preferredtime, setPreferredTime] = useState([]);
 
+    const [leadStatus, setLeadStatus] = useState("");
+    const canSendForPrePrice = leadStatus === "allocated";
+    const isPrePriceLead = leadStatus === "preprice";
 
     const selectedMode = watch("mode")?.toLowerCase();
     const selectedStage = watch("stage")?.toLowerCase();
@@ -267,6 +270,7 @@ export default function BuyLeadFollowupForm() {
 
                 const res = await getBuyFollowupLeadByID(id);
                 const data = res.data;
+                setLeadStatus(data.status?.toLowerCase() || "");
 
                 if (!isMounted) return;
 
@@ -426,12 +430,34 @@ export default function BuyLeadFollowupForm() {
     // Submit
     const onSubmit = async (data) => {
         try {
+            setFormLoading(true);
+
+            // PRE-PRICE FLOW
+            if (isPrePriceLead) {
+                const payload = {
+                    prePrice: Number(data.prePrice),
+                    remarks: data.prePriceRemarks,
+                };
+
+                const res = await BuyLeadProvidePrePrice(id, payload);
+
+                toast.success(
+                    res?.data?.message || "Pre-price added successfully"
+                );
+
+                navigate("/leads/buyleadfollowuplist");
+                return;
+            }
+
+            // NORMAL FOLLOWUP FLOW
             const payload = {
                 branch: getOptionalLabel(branchs, data.branch),
                 alternateMobile: data.alternateMobile,
                 source: getOptionalLabel(leadSources, data.source),
                 mode: data.mode,
-                brokerName: isBroker ? getOptionalLabel(broker, data.broker) : null,
+                brokerName: isBroker
+                    ? getOptionalLabel(broker, data.broker)
+                    : null,
                 customerName: data.customerName,
 
                 leadAddress: data.address
@@ -449,45 +475,77 @@ export default function BuyLeadFollowupForm() {
                 variant: data.variant,
                 color: data.color,
                 fuelType: data.fuelType,
-                mfgMonth: String("January"),
-                mfgYear: String(data.mfgYear),
+                mfgMonth: "January",
+                mfgYear: String(data.year),
                 kms: Number(data.kms),
                 owner: data.owner,
                 clientOffer: Number(data.clientOffer),
                 ourOffer: Number(data.ourOffer),
-                telecaller: getOptionalLabel(telecallers, data.telecaller),
-                executive: getOptionalLabel(executives, data.executive),
+                telecaller: getOptionalLabel(
+                    telecallers,
+                    data.telecaller
+                ),
+                executive: getOptionalLabel(
+                    executives,
+                    data.executive
+                ),
 
-                leadFollowup: data.stage
-                    ? {
-                        stage: data.stage,
-                        disposition: data.disposition,
-                        calldate: data.calldate
-                            ? (() => {
-                                const d = new Date(data.calldate);
-                                const year = d.getFullYear();
-                                const month = String(d.getMonth() + 1).padStart(2, "0");
-                                const date = String(d.getDate()).padStart(2, "0");
-                                return `${year}-${month}-${date}`;
-                            })()
-                            : null,
-                        preferredTime: data.preferredTime,
-                        notes: data.notes,
-                    }
-                    : null,
+                leadFollowup: {
+                    stage: data.stage,
+                    disposition: data.disposition,
+                    calldate: data.calldate
+                        ? (() => {
+                            const d = new Date(data.calldate);
+                            const year = d.getFullYear();
+                            const month = String(
+                                d.getMonth() + 1
+                            ).padStart(2, "0");
+                            const date = String(
+                                d.getDate()
+                            ).padStart(2, "0");
+
+                            return `${year}-${month}-${date}`;
+                        })()
+                        : null,
+                    preferredTime: data.preferredTime,
+                    notes: data.notes,
+                },
             };
 
-            console.log("Final Payload and id:", id, payload);
-            let res;
-            res = await postBuyLeadFollowup(id, payload);
-            toast.success(res?.data?.message || "Success");
-            navigate("/leads/buyleadfollowuplist");
+            const res = await postBuyLeadFollowup(id, payload);
 
+            toast.success(res?.data?.message || "Success");
+
+            navigate("/leads/buyleadfollowuplist");
         } catch (err) {
-            console.error("Submit error:", err);
-            const errorMessage =
-                err?.response?.data?.message || "Something went wrong";
-            toast.error(errorMessage);
+            console.error(err);
+
+            toast.error(
+                err?.response?.data?.message ||
+                "Something went wrong"
+            );
+        } finally {
+            setFormLoading(false);
+        }
+    };
+    // sent for pre price
+    const handleSentForPrePrice = async () => {
+        try {
+            setFormLoading(true);
+
+            const res = await BuyLeadSentPrePrice(id);
+
+            toast.success(res?.data?.message || "Lead sent for pre-price successfully");
+
+            navigate("/leads/buyleadfollowuplist");
+        } catch (err) {
+            console.error(err);
+
+            toast.error(
+                err?.response?.data?.message || "Failed to send lead for pre-price"
+            );
+        } finally {
+            setFormLoading(false);
         }
     };
 
@@ -793,75 +851,148 @@ export default function BuyLeadFollowupForm() {
                         {/* RIGHT SIDE */}
                         <div className="followup-section">
                             <div className="card">
-                                <h3 className="section-title">Followup</h3>
+                                <h3 className="section-title">{isPrePriceLead ? "Provide Pre-Price" : "Followup"}</h3>
                                 <div className="details-grid">
-                                    <FormSelectSearch
-                                        label="Stage"
-                                        name="stage"
-                                        control={control}
-                                        rules={{ required: "Stage is required" }}
-                                        options={stage}
-                                        onChangeExtra={(value) => fetchDispositionByStage(value)}
-                                        errors={errors}
-                                    />
 
-                                    <FormSelectSearch
-                                        label="Disposition"
-                                        name="disposition"
-                                        control={control}
-                                        options={disposition}
-                                        isDisabled={!disposition.length || dispositionLoading}
-                                        isLoading={dispositionLoading}
-                                        rules={{ required: "Disposition is required" }}
-                                        errors={errors}
-                                    />
-                                    {isCallDate && (
+                                    {isPrePriceLead ? (
                                         <>
-                                            <FormDatePicker
-                                                label="Call Date"
-                                                name="calldate"
-                                                control={control}
-                                                rules={
-                                                    isCallDateRequired
-                                                        ? { required: "Call date is required" }
-                                                        : {}
-                                                }
+                                            <FormInput
+                                                label="Pre Price"
+                                                name="prePrice"
+                                                placeholder="Enter pre price"
+                                                register={register}
+                                                rules={{
+                                                    required: "Pre Price is required"
+                                                }}
                                                 errors={errors}
-                                                minDate={new Date()}
-                                                maxDate={new Date(new Date().setDate(new Date().getDate() + 5))}
+                                            />
+
+                                            <FormInput
+                                                label="Remarks"
+                                                name="prePriceRemarks"
+                                                placeholder="Enter remarks"
+                                                register={register}
+                                                rules={{
+                                                    required: "Remarks are required"
+                                                }}
+                                                errors={errors}
                                             />
                                         </>
-                                    )}
-                                    {isAppointment && (
+                                    ) : (
                                         <>
                                             <FormSelectSearch
-                                                label="Preferred Time"
-                                                name="preferredTime"
+                                                label="Stage"
+                                                name="stage"
                                                 control={control}
-                                                rules={{ required: "Preferred Time is required" }}
-                                                options={preferredtime}
+                                                rules={{ required: "Stage is required" }}
+                                                options={stage}
+                                                onChangeExtra={(value) =>
+                                                    fetchDispositionByStage(value)
+                                                }
+                                                errors={errors}
+                                            />
+
+                                            <FormSelectSearch
+                                                label="Disposition"
+                                                name="disposition"
+                                                control={control}
+                                                options={disposition}
+                                                isDisabled={
+                                                    !disposition.length || dispositionLoading
+                                                }
+                                                isLoading={dispositionLoading}
+                                                rules={{
+                                                    required: "Disposition is required"
+                                                }}
+                                                errors={errors}
+                                            />
+
+                                            {isCallDate && (
+                                                <FormDatePicker
+                                                    label="Call Date"
+                                                    name="calldate"
+                                                    control={control}
+                                                    rules={{
+                                                        required: "Call date is required"
+                                                    }}
+                                                    errors={errors}
+                                                    minDate={new Date()}
+                                                    maxDate={
+                                                        new Date(
+                                                            new Date().setDate(
+                                                                new Date().getDate() + 5
+                                                            )
+                                                        )
+                                                    }
+                                                />
+                                            )}
+
+                                            {isAppointment && (
+                                                <FormSelectSearch
+                                                    label="Preferred Time"
+                                                    name="preferredTime"
+                                                    control={control}
+                                                    rules={{
+                                                        required:
+                                                            "Preferred Time is required"
+                                                    }}
+                                                    options={preferredtime}
+                                                    errors={errors}
+                                                />
+                                            )}
+
+                                            <FormInput
+                                                label="Notes"
+                                                name="notes"
+                                                register={register}
+                                                rules={{
+                                                    required: "Notes required"
+                                                }}
                                                 errors={errors}
                                             />
                                         </>
                                     )}
-                                    <FormInput
-                                        label="Notes"
-                                        name="notes"
-                                        register={register}
-                                        rules={{ required: "Notes required" }}
-                                        errors={errors}
-                                    />
+
                                 </div>
                                 <div className="form-actions">
                                     {pageLoading || formLoading ? (
                                         <Skeleton height={45} width={120} />
                                     ) : (
                                         <>
-                                            <div className="tooltip-wrapper">
-                                                <button type="submit" className="btn btn-submit">
-                                                    Create Followp
-                                                </button>
-                                            </div>
+                                            {!isPrePriceLead && (
+                                                <div className="tooltip-wrapper">
+                                                    <button
+                                                        type="submit"
+                                                        className="btn btn-submit"
+                                                    >
+                                                        Create Followup
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {canSendForPrePrice && (
+                                                <div className="tooltip-wrapper">
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-primary"
+                                                        onClick={handleSentForPrePrice}
+                                                    >
+                                                        Send For Pre Price
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {isPrePriceLead && (
+                                                <div className="tooltip-wrapper">
+                                                    <button
+                                                        type="submit"
+                                                        className="btn btn-warning"
+                                                    >
+                                                        Save Pre Price
+                                                    </button>
+                                                </div>
+                                            )}
+
                                             <div className="tooltip-wrapper">
                                                 <button
                                                     type="button"

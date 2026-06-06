@@ -1,11 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { LockKeyhole, Moon, Sun, UserRound } from "lucide-react";
+import { LockKeyhole, LogIn, Moon, ShieldCheck, Sun, UserRound } from "lucide-react";
 import { loginUser } from "../../api/authService";
 import appConfig from "../../config/appConfig";
-import Skeleton from "react-loading-skeleton";
-import "react-loading-skeleton/dist/skeleton.css";
 import { getPreferredTheme, toggleTheme as switchTheme } from "../../utils/theme";
 
 function Login() {
@@ -59,32 +57,56 @@ function Login() {
                 {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
             </button>
 
-            <div className="card card--login">
-                <div className="login-brand">
-                    {loading ? (
-                        <Skeleton width="100%" height={24} />
-                    ) : (
-                        <>
-                            <img src={appConfig.logo} alt="logo" className="logo-img" />
-                            <span>{appConfig.appName}</span>
-                        </>
-                    )}
-                </div>
+            <main className="login-shell">
+                <section className="login-showcase" aria-label={`${appConfig.appName} login`}>
+                    <div className="login-showcase-brand">
+                        <img src={appConfig.logo} alt="" className="login-showcase-logo" />
+                        <span>{appConfig.appName}</span>
+                    </div>
 
-                <div className="login-heading">
-                    <h1>Welcome back</h1>
-                    <p>Sign in to continue</p>
-                </div>
+                    <div className="login-showcase-copy">
+                        <span className="login-kicker">Secure workspace</span>
+                        <div className="login-showcase-title">{appConfig.appName}</div>
+                        <p>Welcome back.</p>
+                    </div>
 
-                <form className="login-form" onSubmit={handleSubmit}>
-                    {loading ? (
-                        <div className="login-fields">
-                            <Skeleton height={44} width="100%" />
-                            <Skeleton height={44} width="100%" />
-                            <Skeleton height={45} width="100%" />
+                    <div className="login-visual-card" aria-hidden="true">
+                        <div className="login-visual-top">
+                            <span />
+                            <span />
                         </div>
-                    ) : (
-                        <>
+                        <div className="login-visual-line long" />
+                        <div className="login-visual-line medium" />
+                        <div className="login-visual-grid">
+                            <span />
+                            <span />
+                            <span />
+                            <span />
+                        </div>
+                        <div className="login-visual-bars">
+                            <span />
+                            <span />
+                            <span />
+                        </div>
+                    </div>
+                </section>
+
+                <section className="login-panel" aria-label="Sign in form">
+                    <div className="card card--login">
+                        <div className="login-brand">
+                            <img src={appConfig.logo} alt={`${appConfig.appName} logo`} className="logo-img" />
+                            <span>{appConfig.appName}</span>
+                        </div>
+
+                        <div className="login-heading">
+                            <span className="login-heading-icon">
+                                <ShieldCheck size={20} />
+                            </span>
+                            <h1>Welcome back</h1>
+                            <p>Sign in to continue</p>
+                        </div>
+
+                        <form className="login-form" onSubmit={handleSubmit}>
                             <div className="login-fields">
                                 <div className="login-field">
                                     <label htmlFor="username">Username</label>
@@ -99,6 +121,7 @@ function Login() {
                                             value={form.username}
                                             onChange={handleChange}
                                             autoComplete="username"
+                                            aria-invalid={!!errors.username}
                                         />
                                     </div>
                                     {errors.username && <p className="error-text">{errors.username}</p>}
@@ -117,19 +140,21 @@ function Login() {
                                             value={form.password}
                                             onChange={handleChange}
                                             autoComplete="current-password"
+                                            aria-invalid={!!errors.password}
                                         />
                                     </div>
                                     {errors.password && <p className="error-text">{errors.password}</p>}
                                 </div>
                             </div>
 
-                            <button className="btn" type="submit">
-                                Login
+                            <button className="btn login-submit" type="submit" disabled={loading}>
+                                <LogIn size={18} />
+                                {loading ? "Signing in..." : "Login"}
                             </button>
-                        </>
-                    )}
-                </form>
-            </div>
+                        </form>
+                    </div>
+                </section>
+            </main>
         </div>
     );
 }

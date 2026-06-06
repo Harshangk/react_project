@@ -303,7 +303,7 @@ export default function BuyReallocationList() {
         },
         {
             key: "actions",
-            label: "#",
+            label: "Action",
             render: (row) => (
                 <ActionMenu
                     showView={false}

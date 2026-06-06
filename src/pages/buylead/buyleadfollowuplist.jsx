@@ -38,8 +38,9 @@ export default function BuyFollowupLeadList() {
 
         const map = {
             notallocated: "badge orange",
-            allocated: "badge green",
+            allocated: "badge purple",
             appointment: "badge green",
+            preprice: "badge orange",
             lost: "badge red",
             dnd: "badge red",
         };
@@ -266,7 +267,7 @@ export default function BuyFollowupLeadList() {
         },
         {
             key: "actions",
-            label: "#",
+            label: "Action",
             render: (row) => (
                 <ActionMenu
                     onView={() => handleView(row)}

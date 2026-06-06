@@ -105,6 +105,17 @@ export const getBuyFollowupLeadStatusCount = () => {
     return API.get("/v1/poc/buy/followup/status/count");
 };
 
+export const BuyLeadSentPrePrice = (leadId) => {
+    return API.patch(`/v1/poc/buy/${leadId}/sent/preprice`);
+};
+
+export const BuyLeadProvidePrePrice = (leadId, payload) => {
+    return API.post(
+        `/v1/poc/buy/${leadId}/provide/preprice`,
+        payload
+    );
+};
+
 export const getBuyFollowupLeadExport = (params = {}) => {
     return API.get("/v1/poc/buy/followup/export", {
         params: params,

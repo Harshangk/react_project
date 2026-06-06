@@ -31,8 +31,10 @@ export default function BuyLeadList() {
         const map = {
             notallocated: "badge orange",
             allocated: "badge purple",
+            appointment: "badge green",
+            preprice: "badge orange",
             lost: "badge red",
-            stockin: "badge green",
+            dnd: "badge red",
         };
 
         return map[status.toLowerCase()] || "badge gray";
@@ -257,7 +259,7 @@ export default function BuyLeadList() {
         },
         {
             key: "actions",
-            label: "#",
+            label: "Action",
             render: (row) => (
                 <ActionMenu
                     onView={() => console.log("View", row)}
