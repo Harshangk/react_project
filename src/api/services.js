@@ -127,6 +127,10 @@ export const getBuyFollowupLeadByID = (leadId) => {
     return API.get(`/v1/poc/buy/followup/lead/${leadId}`);
 };
 
+export const getBuyFollowupHistory = (leadId, params = {}) => {
+    return API.get(`/v1/poc/buy/${leadId}/followup/history`, { params });
+};
+
 export const importBuyLead = (formData, onUploadProgress) => {
     return API.post("/v1/poc/buy/import", formData, {
         headers: {

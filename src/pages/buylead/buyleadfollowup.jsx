@@ -8,10 +8,14 @@ import { useNavigate } from "react-router-dom";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { useState, useEffect } from "react";
-import { postBuyLeadFollowup, BuyLeadSentPrePrice, BuyLeadProvidePrePrice, getBuyFollowupLeadByID, getBuyStage, getBuyStageDispositions, getPreferredTime, getLeadSources, getBuyModes, getFuelTypes, getColor, getOwner, getMake, getModel, getYear, getUser, getBroker, getBranch, getState, getCity, getCurrentUser } from "../../api/services";
+import { postBuyLeadFollowup, BuyLeadSentPrePrice, BuyLeadProvidePrePrice, getBuyFollowupLeadByID, getBuyStage, getBuyStageDispositions, getPreferredTime, getLeadSources, getBuyModes, getFuelTypes, getColor, getOwner, getMake, getModel, getYear, getUser, getBroker, getBranch, getState, getCity, getCurrentUser, getBuyFollowupHistory } from "../../api/services";
 import { PAYMENT_ROLE_IDS, PRICING_ROLE_IDS } from "../../config/roleConfig";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import DataTable from "../../components/common/DataTable";
+import Pagination from "../../components/common/Pagination";
+import { formatDateTime } from "../../utils/formatDate";
+import { Table, LayoutGrid } from "lucide-react";
 
 export default function BuyLeadFollowupForm() {
     const navigate = useNavigate();
@@ -58,6 +62,16 @@ export default function BuyLeadFollowupForm() {
     const [currentUser, setCurrentUser] = useState(null);
 
     const [leadStatus, setLeadStatus] = useState("");
+
+    // history
+    const [historyData, setHistoryData] = useState([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [historyView, setHistoryView] = useState("table");
+    const [historyTotal, setHistoryTotal] = useState(0);
+    const [historyPageSize, setHistoryPageSize] = useState(10);
+    const [historyCursor, setHistoryCursor] = useState(null);
+    const [historyNextCursor, setHistoryNextCursor] = useState(null);
+    const [historyPrevStack, setHistoryPrevStack] = useState([]);
     const currentUserRoleId = currentUser?.role_id ?? currentUser?.roleId ?? currentUser?.role?.id ?? currentUser?.role?.role_id ?? null;
     const isUserPaymentRole = PAYMENT_ROLE_IDS.includes(currentUserRoleId);
     const isUserPricingRole = PRICING_ROLE_IDS.includes(currentUserRoleId);
@@ -547,6 +561,75 @@ export default function BuyLeadFollowupForm() {
             setFormLoading(false);
         }
     };
+    const fetchHistory = async (signal) => {
+        if (!id) return;
+        try {
+            setHistoryLoading(true);
+            const res = await getBuyFollowupHistory(id, {
+                cursor: historyCursor,
+                limit: historyPageSize,
+            });
+            if (signal?.aborted) return;
+            const result = res.data;
+            setHistoryData(result.items || []);
+            setHistoryTotal(result.total || 0);
+            if (result.next && result.items?.length > 0) {
+                const params = new URLSearchParams(result.next.split("?")[1]);
+                const next = params.get("cursor");
+                setHistoryNextCursor(result.items.length < historyPageSize ? null : next);
+            } else {
+                setHistoryNextCursor(null);
+            }
+        } catch (err) {
+            console.error("History fetch error:", err);
+        } finally {
+            setHistoryLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!id) return;
+        const controller = new AbortController();
+        fetchHistory(controller.signal);
+        return () => controller.abort();
+    }, [id, historyCursor, historyPageSize]);
+
+    const handleHistoryNext = () => {
+        if (!historyNextCursor) return;
+        setHistoryPrevStack((prev) => [...prev, historyCursor]);
+        setHistoryCursor(historyNextCursor);
+    };
+
+    const handleHistoryPrev = () => {
+        if (historyPrevStack.length === 0) return;
+        const stack = [...historyPrevStack];
+        const prevCursor = stack.pop();
+        setHistoryPrevStack(stack);
+        setHistoryCursor(prevCursor);
+    };
+
+    const getStageClass = (stage) => {
+        if (!stage) return "badge";
+        const map = {
+            fresh: "badge orange",
+            underfollowup: "badge purple",
+            appointment: "badge green",
+            lost: "badge red",
+            dnd: "badge red",
+        };
+        return map[stage.toLowerCase()] || "badge gray";
+    };
+
+    const historyColumns = [
+        { key: "stage", label: "Stage", render: (row) => <span className={`badge ${getStageClass(row.stage)}`}>{row.stage}</span> },
+        { key: "disposition", label: "Disposition" },
+        { key: "calldate", label: "Call Date", render: (row) => row.calldate ? new Date(row.calldate).toLocaleDateString("en-GB") : "-" },
+        { key: "preferredTime", label: "Preferred Time", render: (row) => row.preferredTime || "-" },
+        { key: "notes", label: "Notes", render: (row) => row.notes || "-" },
+        { key: "createdBy", label: "Created By" },
+        { key: "createdAt", label: "Created At", render: (row) => formatDateTime(row.createdAt) },
+    ];
+
     // sent for pre price
     const handleSentForPrePrice = async () => {
         try {
@@ -1030,6 +1113,93 @@ export default function BuyLeadFollowupForm() {
                         )}
                     </div>
                 </form>
+
+                {isEdit && (
+                    <div className="card" style={{ marginTop: "24px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                            <h3 className="section-title" style={{ margin: 0 }}>Followup History</h3>
+                            <div className="view-toggle">
+                                <button
+                                    type="button"
+                                    className={`toggle-btn ${historyView === "table" ? "active" : ""}`}
+                                    onClick={() => setHistoryView("table")}
+                                >
+                                    <Table size={16} />
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`toggle-btn ${historyView === "card" ? "active" : ""}`}
+                                    onClick={() => setHistoryView("card")}
+                                >
+                                    <LayoutGrid size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="table-container">
+                            {historyView === "table" ? (
+                                <DataTable
+                                    columns={historyColumns}
+                                    data={historyData}
+                                    loading={historyLoading}
+                                />
+                            ) : (
+                                <div className="card-view">
+                                    {historyLoading ? (
+                                        <Skeleton count={3} height={100} style={{ marginBottom: "12px" }} />
+                                    ) : historyData.length === 0 ? (
+                                        <p style={{ color: "#888", textAlign: "center", padding: "24px" }}>No history found.</p>
+                                    ) : (
+                                        historyData.map((h) => (
+                                            <div key={h.docId} className="lead-card">
+                                                <div className="card-header">
+                                                    <div className="left">
+                                                        <div>
+                                                            <div className="lead-id">
+                                                                <span className={`badge ${getStageClass(h.stage)}`}>{h.stage}</span>
+                                                            </div>
+                                                            <div className="customer-name">{h.disposition}</div>
+                                                            <div className="mobile">By: {h.createdBy} &nbsp;|&nbsp; {formatDateTime(h.createdAt)}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="followup-box">
+                                                    <div className="followup-left">
+                                                        <span className="badge light">
+                                                            {h.calldate ? new Date(h.calldate).toLocaleDateString("en-GB") : "-"}
+                                                        </span>
+                                                        <span className="badge light">{h.preferredTime || "-"}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="audit-row">
+                                                    <span>Notes: {h.notes || "-"}</span>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+
+                            <Pagination
+                                total={historyTotal}
+                                pageSize={historyPageSize}
+                                setPageSize={(size) => {
+                                    setHistoryPageSize(size);
+                                    setHistoryCursor(null);
+                                    setHistoryPrevStack([]);
+                                    setHistoryNextCursor(null);
+                                }}
+                                handleNext={handleHistoryNext}
+                                handlePrev={handleHistoryPrev}
+                                hasNext={!!historyNextCursor}
+                                hasPrev={historyPrevStack.length > 0}
+                                currentPage={historyPrevStack.length + 1}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
         </MainLayout>
     );
