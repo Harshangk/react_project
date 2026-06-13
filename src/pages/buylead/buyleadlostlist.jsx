@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+﻿import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout";
@@ -8,6 +8,7 @@ import TableToolbar from "../../components/common/TableToolbar";
 import ActionMenu from "../../components/common/ActionMenu";
 import Avatar from "../../components/common/Avatar";
 import { formatDateTime } from "../../utils/formatDate";
+import { getStatusClass, getStageClass, formatStatus, formatStage } from "../../utils/badgeUtils";
 import FormSelectSearch from "../../components/common/FormSelectSearch";
 import { getBuyLeads, deleteBuyLead, getUser, patchBuyLeadReopen } from "../../api/services";
 import ConfirmModal from "../../components/common/ConfirmModal";
@@ -76,37 +77,8 @@ export default function BuyLeadLostList() {
                 setLoading(false);
             }
         };
-        console.log("API CALLED");
         fetchEnums();
     }, []);
-
-    const getStatusClass = (status) => {
-        if (!status) return "badge";
-
-        const map = {
-            notallocated: "badge orange",
-            allocated: "badge green",
-            lost: "badge red",
-            dnd: "badge red",
-
-        };
-
-        return map[status.toLowerCase()] || "badge gray";
-    };
-
-    const getStageClass = (stage) => {
-        if (!stage) return "badge";
-
-        const map = {
-            fresh: "badge orange",
-            underfollowup: "badge purple",
-            appointment: "badge green",
-            lost: "badge red",
-            dnd: "badge red",
-        };
-
-        return map[stage.toLowerCase()] || "badge gray";
-    };
 
     const handleDeleteClick = (row) => {
         setDeleteId(row.id); // open modal
@@ -257,8 +229,6 @@ export default function BuyLeadLostList() {
             telecaller: getOptionalLabel(telecaller, selectedTelecaller),
             executive: getOptionalLabel(executive, selectedExecutive),
         };
-
-        console.log("Payload:", payload);
         try {
             const res = await patchBuyLeadReopen(payload);
             toast.success(res?.data?.message || "Success");
@@ -275,7 +245,6 @@ export default function BuyLeadLostList() {
             toast.error(errorMessage);
         }
     };
-    console.log("Selected IDs:", selectedIds)
     const columns = [
         {
             key: "select",
@@ -303,7 +272,7 @@ export default function BuyLeadLostList() {
             label: "Status",
             render: (row) => (
                 <span className={`badge ${getStatusClass(row.status)}`}>
-                    {row.status}
+                    {formatStatus(row.status)}
                 </span>
             ),
         },
@@ -315,7 +284,7 @@ export default function BuyLeadLostList() {
 
                 return (
                     <span className={`badge ${getStageClass(stage)}`}>
-                        {stage || "-"}
+                        {formatStage(stage)}
                     </span>
                 );
             },
@@ -397,9 +366,9 @@ export default function BuyLeadLostList() {
 
         < MainLayout >
             <div className="content">
-                <h3 style={{ marginBottom: "20px" }}>
-                    {loading ? <Skeleton width={200} /> : `Search ${activeTab} Leads`}
-                </h3>
+                <div className="page-header">
+                    <h3>{loading ? <Skeleton width={200} /> : `Search ${activeTab} Leads`}</h3>
+                </div>
                 <div className="tabs-container">
                     <div className="tabs">
                         <button
@@ -481,7 +450,7 @@ export default function BuyLeadLostList() {
                                                 {row.make} - {row.model} - {row.year}
                                             </div>
                                             <div className="vehicle-sub">
-                                                {row.fuelType} • {row.kms} kms • {row.owner} owner
+                                                {row.fuelType} â€¢ {row.kms} kms â€¢ {row.owner} owner
                                             </div>
                                         </div>
 
@@ -510,7 +479,7 @@ export default function BuyLeadLostList() {
 
                                             <div className="followup-left">
                                                 <span className={`badge ${getStageClass(lf.stage)}`}>
-                                                    {lf.stage || "-"}
+                                                    {formatStage(lf.stage)}
                                                 </span>
 
                                                 <span className="badge light">
@@ -528,9 +497,9 @@ export default function BuyLeadLostList() {
 
                                         {/* FOOTER AUDIT */}
                                         <div className="audit-row">
-                                            <span>Created: {row.createdBy} • {formatDateTime(row.createdAt)}</span>
-                                            <span>Allocated: {row.allocatedBy} • {formatDateTime(row.allocatedAt)}</span>
-                                            <span>Followup: {row.followupCreatedBy} • {formatDateTime(row.followupCreatedAt)}</span>
+                                            <span>Created: {row.createdBy} â€¢ {formatDateTime(row.createdAt)}</span>
+                                            <span>Allocated: {row.allocatedBy} â€¢ {formatDateTime(row.allocatedAt)}</span>
+                                            <span>Followup: {row.followupCreatedBy} â€¢ {formatDateTime(row.followupCreatedAt)}</span>
                                         </div>
 
                                     </div>

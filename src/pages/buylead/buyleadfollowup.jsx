@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+﻿import { useForm } from "react-hook-form";
 import FormInput from "../../components/common/FormInput";
 import FormSelectSearch from "../../components/common/FormSelectSearch";
 import FormDatePicker from "../../components/common/FormDatePicker";
@@ -15,6 +15,7 @@ import { toast } from "react-toastify";
 import DataTable from "../../components/common/DataTable";
 import Pagination from "../../components/common/Pagination";
 import { formatDateTime } from "../../utils/formatDate";
+import { getStageClass, formatStage } from "../../utils/badgeUtils";
 import { Table, LayoutGrid } from "lucide-react";
 
 export default function BuyLeadFollowupForm() {
@@ -207,7 +208,6 @@ export default function BuyLeadFollowupForm() {
 
     const fetchDispositionByStage = async (stage) => {
         try {
-            console.log("stage", stage);
             setDispositionLoading(true);
             setDisposition([]);
             setValue("disposition", "");
@@ -445,7 +445,6 @@ export default function BuyLeadFollowupForm() {
                 setPageLoading(false);
             }
         };
-        console.log("API CALLED");
         fetchEnums();
 
         const fetchUser = async () => {
@@ -608,20 +607,8 @@ export default function BuyLeadFollowupForm() {
         setHistoryCursor(prevCursor);
     };
 
-    const getStageClass = (stage) => {
-        if (!stage) return "badge";
-        const map = {
-            fresh: "badge orange",
-            underfollowup: "badge purple",
-            appointment: "badge green",
-            lost: "badge red",
-            dnd: "badge red",
-        };
-        return map[stage.toLowerCase()] || "badge gray";
-    };
-
     const historyColumns = [
-        { key: "stage", label: "Stage", render: (row) => <span className={`badge ${getStageClass(row.stage)}`}>{row.stage}</span> },
+        { key: "stage", label: "Stage", render: (row) => <span className={`badge ${getStageClass(row.stage)}`}>{formatStage(row.stage)}</span> },
         { key: "disposition", label: "Disposition" },
         { key: "calldate", label: "Call Date", render: (row) => row.calldate ? new Date(row.calldate).toLocaleDateString("en-GB") : "-" },
         { key: "preferredTime", label: "Preferred Time", render: (row) => row.preferredTime || "-" },
@@ -1156,7 +1143,7 @@ export default function BuyLeadFollowupForm() {
                                                     <div className="left">
                                                         <div>
                                                             <div className="lead-id">
-                                                                <span className={`badge ${getStageClass(h.stage)}`}>{h.stage}</span>
+                                                                <span className={`badge ${getStageClass(h.stage)}`}>{formatStage(h.stage)}</span>
                                                             </div>
                                                             <div className="customer-name">{h.disposition}</div>
                                                             <div className="mobile">By: {h.createdBy} &nbsp;|&nbsp; {formatDateTime(h.createdAt)}</div>

@@ -1,10 +1,17 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { LockKeyhole, LogIn, Moon, Sun, UserRound, Car } from "lucide-react";
+import { LockKeyhole, LogIn, Moon, Sun, UserRound, Car, CheckCircle2 } from "lucide-react";
 import { loginUser } from "../../api/authService";
 import appConfig from "../../config/appConfig";
 import { getPreferredTheme, toggleTheme as switchTheme } from "../../utils/theme";
+
+const FEATURES = [
+    "Buyer lead management & followup",
+    "Pre-owned inventory tracking",
+    "Role-based access & team assignment",
+    "Deal & pre-price workflow",
+];
 
 function Login() {
     const navigate = useNavigate();
@@ -19,9 +26,9 @@ function Login() {
     };
 
     const validate = () => {
-        let newErrors = {};
-        if (!form.username) newErrors.username = "Username is required";
-        if (!form.password) newErrors.password = "Password is required";
+        const newErrors = {};
+        if (!form.username.trim()) newErrors.username = "Username is required";
+        if (!form.password)        newErrors.password = "Password is required";
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -38,7 +45,7 @@ function Login() {
             setLoading(true);
             await loginUser(form.username, form.password);
             navigate("/dashboard");
-        } catch (error) {
+        } catch {
             toast.error("Invalid username or password");
         } finally {
             setLoading(false);
@@ -47,42 +54,57 @@ function Login() {
 
     return (
         <div className="container-center login-page">
+            {/* Theme toggle */}
             <button
                 type="button"
                 className="icon-btn login-theme-toggle"
                 onClick={handleThemeToggle}
                 aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
-                title={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
             >
-                {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
+                {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
             </button>
 
             <main className="login-shell">
-                <section className="login-showcase" aria-label={`${appConfig.appName} login`}>
+                {/* LEFT — brand showcase */}
+                <section className="login-showcase" aria-label={`${appConfig.appName} product overview`}>
                     <div className="login-showcase-brand">
-                        <img src={appConfig.logo} alt="" className="login-showcase-logo" />
+                        <img src={appConfig.logo} alt="" className="login-showcase-logo" aria-hidden="true" />
                         <span>{appConfig.appName}</span>
                     </div>
 
                     <div className="login-showcase-copy">
-                        <span className="login-kicker">Pre-owned car dealership</span>
-                        <div className="login-showcase-title">{appConfig.appName}</div>
-                        <p>Manage used-car inventory, buyer enquiries, and sales workflows from one smart dashboard.</p>
-                    </div>
+                        <span className="login-kicker">Pre-owned car dealership CRM</span>
+                        <div className="login-showcase-title">
+                            Run your dealership smarter.
+                        </div>
+                        <p>One dashboard for leads, followups, pre-pricing, and team coordination.</p>
 
-                    <div className="login-showcase-features">
-                        <span>Certified inventory</span>
-                        <span>Buyer follow-up</span>
-                        <span>Deal & finance tracking</span>
+                        <div className="login-showcase-features" style={{ marginTop: 20 }}>
+                            {FEATURES.map((f) => (
+                                <div
+                                    key={f}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8,
+                                        fontSize: 13,
+                                        fontWeight: 500,
+                                        color: "var(--text-main)",
+                                    }}
+                                >
+                                    <CheckCircle2 size={15} style={{ color: "var(--accent)", flexShrink: 0 }} />
+                                    {f}
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     <div className="login-showcase-panel" aria-hidden="true">
                         <div className="login-showcase-badge">
-                            <Car size={20} />
-                            <span>POC Car CRM</span>
+                            <Car size={18} />
+                            <span>Trusted by dealerships</span>
                         </div>
-                        <p className="login-showcase-copyline">Designed for pre-owned car dealerships, this login page brings a clean automotive feel without extra dashboard clutter.</p>
-                        <div className="login-showcase-road" aria-hidden="true">
+                        <div className="login-showcase-road">
                             <span />
                             <span />
                             <span />
@@ -90,7 +112,8 @@ function Login() {
                     </div>
                 </section>
 
-                <section className="login-panel card--login" aria-label="Sign in form">
+                {/* RIGHT — form */}
+                <section className="login-panel card--login" aria-label="Sign in">
                     <div className="login-brand">
                         <img src={appConfig.logo} alt={`${appConfig.appName} logo`} className="logo-img" />
                         <span>{appConfig.appName}</span>
@@ -101,53 +124,90 @@ function Login() {
                             <Car size={20} />
                         </span>
                         <h1>Welcome back</h1>
-                        <p>Sign in to continue</p>
+                        <p>Sign in to your account to continue</p>
                     </div>
 
-                    <form className="login-form" onSubmit={handleSubmit}>
+                    <form className="login-form" onSubmit={handleSubmit} noValidate>
                         <div className="login-fields">
+                            {/* Username */}
                             <div className="login-field">
                                 <label htmlFor="username">Username</label>
                                 <div className={`login-input-wrap ${errors.username ? "error" : ""}`}>
-                                    <UserRound size={18} />
+                                    <UserRound size={17} aria-hidden="true" />
                                     <input
                                         id="username"
-                                        className={`input ${errors.username ? "input-error" : ""}`}
+                                        className="input"
                                         type="text"
                                         name="username"
-                                        placeholder="Enter username"
+                                        placeholder="Enter your username"
                                         value={form.username}
                                         onChange={handleChange}
                                         autoComplete="username"
                                         aria-invalid={!!errors.username}
+                                        aria-describedby={errors.username ? "username-error" : undefined}
                                     />
                                 </div>
-                                {errors.username && <p className="error-text">{errors.username}</p>}
+                                {errors.username && (
+                                    <p className="error-text" id="username-error" role="alert">
+                                        {errors.username}
+                                    </p>
+                                )}
                             </div>
 
+                            {/* Password */}
                             <div className="login-field">
                                 <label htmlFor="password">Password</label>
                                 <div className={`login-input-wrap ${errors.password ? "error" : ""}`}>
-                                    <LockKeyhole size={18} />
+                                    <LockKeyhole size={17} aria-hidden="true" />
                                     <input
                                         id="password"
-                                        className={`input ${errors.password ? "input-error" : ""}`}
+                                        className="input"
                                         type="password"
                                         name="password"
-                                        placeholder="Enter password"
+                                        placeholder="Enter your password"
                                         value={form.password}
                                         onChange={handleChange}
                                         autoComplete="current-password"
                                         aria-invalid={!!errors.password}
+                                        aria-describedby={errors.password ? "password-error" : undefined}
                                     />
                                 </div>
-                                {errors.password && <p className="error-text">{errors.password}</p>}
+                                {errors.password && (
+                                    <p className="error-text" id="password-error" role="alert">
+                                        {errors.password}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
-                        <button className="btn login-submit" type="submit" disabled={loading}>
-                            <LogIn size={18} />
-                            {loading ? "Signing in..." : "Login"}
+                        <button
+                            className="btn login-submit"
+                            type="submit"
+                            disabled={loading}
+                            aria-busy={loading}
+                        >
+                            {loading ? (
+                                <>
+                                    <span
+                                        style={{
+                                            width: 16, height: 16,
+                                            border: "2px solid rgba(255,255,255,0.35)",
+                                            borderTopColor: "#fff",
+                                            borderRadius: "50%",
+                                            display: "inline-block",
+                                            animation: "spin 0.7s linear infinite",
+                                            flexShrink: 0,
+                                        }}
+                                        aria-hidden="true"
+                                    />
+                                    Signing in…
+                                </>
+                            ) : (
+                                <>
+                                    <LogIn size={17} />
+                                    Sign in
+                                </>
+                            )}
                         </button>
                     </form>
                 </section>

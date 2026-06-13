@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+﻿import { useForm } from "react-hook-form";
 import FormInput from "../../components/common/FormInput";
 import FormSelectSearch from "../../components/common/FormSelectSearch";
 import MainLayout from "../../components/layout/MainLayout";
@@ -375,7 +375,6 @@ export default function BuyLeadForm() {
                 setLoading(false);
             }
         };
-        console.log("API CALLED");
         fetchEnums();
     }, []);
 
@@ -419,8 +418,6 @@ export default function BuyLeadForm() {
                 executive: getOptionalLabel(executives, data.executive),
                 remarks: data.remarks,
             };
-
-            console.log("Final Payload and id:", id, payload);
             let res;
             if (isEdit) {
                 res = await putBuyLead(id, payload);

@@ -7,7 +7,9 @@ import TableToolbar from "../../components/common/TableToolbar";
 import ActionMenu from "../../components/common/ActionMenu";
 import Avatar from "../../components/common/Avatar";
 import { formatDateTime } from "../../utils/formatDate";
+import { getStatusClass, getStageClass, downloadCsv, formatStatus, formatStage } from "../../utils/badgeUtils";
 import { getBuyFollowupLeadStatusCount, getBuyFollowupLeads, getBuyFollowupLeadExport } from "../../api/services";
+import { toast } from "react-toastify";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 
@@ -33,59 +35,21 @@ export default function BuyFollowupLeadList() {
 
     const [view, setView] = useState("table");
 
-    const getStatusClass = (status) => {
-        if (!status) return "badge";
-
-        const map = {
-            notallocated: "badge orange",
-            allocated: "badge purple",
-            appointment: "badge green",
-            preprice: "badge orange",
-            lost: "badge red",
-            dnd: "badge red",
-        };
-
-        return map[status.toLowerCase()] || "badge gray";
-    };
-
-    const getStageClass = (stage) => {
-        if (!stage) return "badge";
-        const key = stage.toLowerCase();
-        const map = {
-            fresh: "badge orange",
-            underfollowup: "badge purple",
-            appointment: "badge green",
-            lost: "badge red",
-            dnd: "badge red",
-        };
-
-        return map[stage.toLowerCase()] || "badge gray";
-    };
-
-    const handleView = (row) => {
-        navigate(`/leads/buyleadfollowup/${row.id}`);
-    };
+    const handleView = (row) => navigate(`/leads/buyleadfollowup/${row.id}`);
 
     const handleExport = async () => {
-        const res = await getBuyFollowupLeadExport({
-            search: search || undefined,
-            buy_stage: activeTab,
-            sort_by: "id",
-            sort_order: "desc",
-        });
-
-        const blob = new Blob([res.data], { type: "text/csv" });
-        const url = window.URL.createObjectURL(blob);
-
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `followup_leads_${Date.now()}.csv`;
-
-        document.body.appendChild(link);
-        link.click();
-
-        link.remove();
-        window.URL.revokeObjectURL(url);
+        try {
+            const res = await getBuyFollowupLeadExport({
+                search: search || undefined,
+                buy_stage: activeTab,
+                sort_by: "id",
+                sort_order: "desc",
+            });
+            downloadCsv(res.data, `followup_leads_${Date.now()}.csv`);
+            toast.success("Export downloaded");
+        } catch {
+            toast.error("Export failed. Please try again.");
+        }
     };
 
     const [cursor, setCursor] = useState(null);
@@ -197,7 +161,7 @@ export default function BuyFollowupLeadList() {
             label: "Status",
             render: (row) => (
                 <span className={`badge ${getStatusClass(row.status)}`}>
-                    {row.status}
+                    {formatStatus(row.status)}
                 </span>
             ),
         },
@@ -205,8 +169,8 @@ export default function BuyFollowupLeadList() {
             key: "stage",
             label: "Stage",
             render: (row) => (
-                <span className={`badge ${getStageClass(row.leadFollowup.stage)}`}>
-                    {row.leadFollowup.stage}
+                <span className={`badge ${getStageClass(row.leadFollowup?.stage)}`}>
+                    {formatStage(row.leadFollowup?.stage)}
                 </span>
             ),
         },
@@ -279,9 +243,9 @@ export default function BuyFollowupLeadList() {
     return (
         <MainLayout>
             <div className="content">
-                <h3 style={{ marginBottom: "20px" }}>
-                    {loading ? <Skeleton width={200} /> : `Search ${activeTab} Leads`}
-                </h3>
+                <div className="page-header">
+                    <h3>{loading ? <Skeleton width={180} /> : "Followup Leads"}</h3>
+                </div>
                 <div className="tabs-container">
                     <div className="tabs">
                         {TABS.map((tab) => (
@@ -312,6 +276,7 @@ export default function BuyFollowupLeadList() {
                     view={view}
                     setView={setView}
                     onExport={handleExport}
+
                 />
 
                 <div className="table-container">
@@ -342,7 +307,7 @@ export default function BuyFollowupLeadList() {
 
                                             <div className="right">
                                                 <span className={`badge ${getStatusClass(row.status)}`}>
-                                                    {row.status}
+                                                    {formatStatus(row.status)}
                                                 </span>
                                                 <ActionMenu onView={() => handleView(row)} />
                                             </div>
@@ -383,10 +348,9 @@ export default function BuyFollowupLeadList() {
 
                                             <div className="followup-left">
                                                 <span className={`badge ${getStageClass(lf.stage)}`}>
-                                                    {lf.stage || "-"}
+                                                    {formatStage(lf.stage)}
                                                 </span>
-
-                                                <span className="badge light">
+                                                <span className="badge gray">
                                                     {lf.disposition || "-"}
                                                 </span>
                                             </div>

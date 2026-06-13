@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+﻿import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout";
@@ -8,6 +8,7 @@ import TableToolbar from "../../components/common/TableToolbar";
 import ActionMenu from "../../components/common/ActionMenu";
 import Avatar from "../../components/common/Avatar";
 import { formatDateTime } from "../../utils/formatDate";
+import { getStatusClass, getStageClass, formatStatus } from "../../utils/badgeUtils";
 import FormSelectSearch from "../../components/common/FormSelectSearch";
 import { getBuyLeads, deleteBuyLead, getUser, patchBuyLeadAllocation } from "../../api/services";
 import ConfirmModal from "../../components/common/ConfirmModal";
@@ -64,21 +65,8 @@ export default function BuyUntouchedList() {
                 setLoading(false);
             }
         };
-        console.log("API CALLED");
         fetchEnums();
     }, []);
-
-    const getStatusClass = (status) => {
-        if (!status) return "badge";
-
-        const map = {
-            notallocated: "badge orange",
-            allocated: "badge green",
-            lost: "badge red",
-        };
-
-        return map[status.toLowerCase()] || "badge gray";
-    };
 
     const handleDeleteClick = (row) => {
         setDeleteId(row.id); // open modal
@@ -223,8 +211,6 @@ export default function BuyUntouchedList() {
             telecaller: getOptionalLabel(telecaller, selectedTelecaller),
             executive: getOptionalLabel(executive, selectedExecutive),
         };
-
-        console.log("Payload:", payload);
         try {
             const res = await patchBuyLeadAllocation(payload);
             toast.success(res?.data?.message || "Success");
@@ -241,7 +227,6 @@ export default function BuyUntouchedList() {
             toast.error(errorMessage);
         }
     };
-    console.log("Selected IDs:", selectedIds)
     const columns = [
         {
             key: "select",
@@ -297,7 +282,7 @@ export default function BuyUntouchedList() {
             label: "Status",
             render: (row) => (
                 <span className={`badge ${getStatusClass(row.status)}`}>
-                    {row.status}
+                    {formatStatus(row.status)}
                 </span>
             ),
         },
@@ -319,9 +304,9 @@ export default function BuyUntouchedList() {
 
         < MainLayout >
             <div className="content">
-                <h3 style={{ marginBottom: "20px" }}>
-                    {loading ? <Skeleton width={200} /> : "Search Untouched Leads"}
-                </h3>
+                <div className="page-header">
+                    <h3>{loading ? <Skeleton width={200} /> : "Search Untouched Leads"}</h3>
+                </div>
                 <TableToolbar
                     search={search}
                     setSearch={setSearch}
@@ -383,7 +368,7 @@ export default function BuyUntouchedList() {
                                         </div>
 
                                         <div className="card-sub">
-                                            {row.fuelType} • {row.year} • {row.kms} kms
+                                            {row.fuelType} â€¢ {row.year} â€¢ {row.kms} kms
                                         </div>
 
                                         <div className="card-meta">
@@ -400,7 +385,7 @@ export default function BuyUntouchedList() {
                                         </span>
 
                                         <span className="date">
-                                            {row.createdBy} • {formatDateTime(row.createdAt)}
+                                            {row.createdBy} â€¢ {formatDateTime(row.createdAt)}
                                         </span>
                                     </div>
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
@@ -58,7 +58,7 @@ export default function ImportLead() {
                 console.error(err);
                 toast.error("Failed to load sources");
             } finally {
-                setLoading(false); // ✅ IMPORTANT
+                setLoading(false); // âœ… IMPORTANT
             }
         };
 
@@ -103,11 +103,6 @@ export default function ImportLead() {
                 toast.error("Please select a CSV file");
                 return;
             }
-
-            console.log("source:", data.source);
-            console.log("broker:", data.broker);
-            console.log("file:", file);
-
             setUploading(true);
             setProgress(0);
 
@@ -155,7 +150,7 @@ export default function ImportLead() {
                     <div className="import-header">
                         <h3>Bulk Import Wizard</h3>
                         <span className="download-link">
-                            ⬇ Download Sample CSV
+                            â¬‡ Download Sample CSV
                         </span>
                     </div>
 

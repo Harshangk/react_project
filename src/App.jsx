@@ -4,43 +4,31 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import appConfig from "./config/appConfig";
 import { applyTheme, getPreferredTheme } from "./utils/theme";
+import { UserProvider } from "./context/UserContext";
 
 function App() {
-  const [theme, setTheme] = useState(() => applyTheme(getPreferredTheme()));
+    const [theme, setTheme] = useState(() => applyTheme(getPreferredTheme()));
 
-  useEffect(() => {
-    document.title = appConfig.appName;
+    useEffect(() => {
+        document.title = appConfig.appName;
 
-    const handleThemeChange = (event) => {
-      setTheme(applyTheme(event.detail?.theme || getPreferredTheme()));
-    };
+        const onThemeChange  = (e) => setTheme(applyTheme(e.detail?.theme || getPreferredTheme()));
+        const onStorageChange = (e) => { if (e.key === "theme") setTheme(applyTheme(e.newValue || getPreferredTheme())); };
 
-    const handleStorageChange = (event) => {
-      if (event.key === "theme") {
-        setTheme(applyTheme(event.newValue || getPreferredTheme()));
-      }
-    };
+        window.addEventListener("themechange", onThemeChange);
+        window.addEventListener("storage",     onStorageChange);
+        return () => {
+            window.removeEventListener("themechange", onThemeChange);
+            window.removeEventListener("storage",     onStorageChange);
+        };
+    }, []);
 
-    window.addEventListener("themechange", handleThemeChange);
-    window.addEventListener("storage", handleStorageChange);
-
-    return () => {
-      window.removeEventListener("themechange", handleThemeChange);
-      window.removeEventListener("storage", handleStorageChange);
-    };
-  }, []);
-
-  return (
-    <>
-      <AppRoutes />
-
-      <ToastContainer
-        position="top-right"
-        autoClose={2000}
-        theme={theme}
-      />
-    </>
-  );
+    return (
+        <UserProvider>
+            <AppRoutes />
+            <ToastContainer position="top-right" autoClose={2500} theme={theme} />
+        </UserProvider>
+    );
 }
 
 export default App;

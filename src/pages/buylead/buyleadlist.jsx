@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout";
 import DataTable from "../../components/common/DataTable";
@@ -7,6 +7,7 @@ import TableToolbar from "../../components/common/TableToolbar";
 import ActionMenu from "../../components/common/ActionMenu";
 import Avatar from "../../components/common/Avatar";
 import { formatDateTime } from "../../utils/formatDate";
+import { getStatusClass, getStageClass, downloadCsv, formatStatus, formatStage } from "../../utils/badgeUtils";
 import { getBuyLeads, deleteBuyLead, getBuyLeadExport } from "../../api/services";
 import ConfirmModal from "../../components/common/ConfirmModal";
 import { toast } from "react-toastify";
@@ -15,93 +16,45 @@ import "react-loading-skeleton/dist/skeleton.css";
 
 export default function BuyLeadList() {
     const navigate = useNavigate();
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    const [search, setSearch] = useState("");
-    const [pageSize, setPageSize] = useState(10);
-
-    const [deleteId, setDeleteId] = useState(null);
+    const [data, setData]               = useState([]);
+    const [loading, setLoading]         = useState(true);
+    const [search, setSearch]           = useState("");
+    const [pageSize, setPageSize]       = useState(10);
+    const [deleteId, setDeleteId]       = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
-    const [view, setView] = useState("table");
+    const [view, setView]               = useState("table");
 
-    const getStatusClass = (status) => {
-        if (!status) return "badge";
-
-        const map = {
-            notallocated: "badge orange",
-            allocated: "badge purple",
-            appointment: "badge green",
-            preprice: "badge orange",
-            lost: "badge red",
-            dnd: "badge red",
-        };
-
-        return map[status.toLowerCase()] || "badge gray";
-    };
-    const getStageClass = (stage) => {
-        if (!stage) return "badge";
-
-        const map = {
-            fresh: "badge orange",
-            underfollowup: "badge purple",
-            appointment: "badge green",
-            lost: "badge red",
-            dnd: "badge red",
-        };
-
-        return map[stage.toLowerCase()] || "badge gray";
-    };
-    const handleEdit = (row) => {
-        navigate(`/leads/buylead/${row.id}`);
-    };
-
-    const handleDeleteClick = (row) => {
-        setDeleteId(row.id); // open modal
-    };
+    const handleView   = (row) => navigate(`/leads/buyleadfollowup/${row.id}`);
+    const handleEdit   = (row) => navigate(`/leads/buylead/${row.id}`);
+    const handleDeleteClick = (row) => setDeleteId(row.id);
+    const cancelDelete = () => setDeleteId(null);
 
     const confirmDelete = async () => {
         try {
             setDeleteLoading(true);
-
             const res = await deleteBuyLead(deleteId);
-
             toast.success(res?.data?.message || "Deleted successfully");
-
-            setDeleteId(null); // close modal
+            setDeleteId(null);
             fetchLeads();
-
-        } catch (err) {
-            console.error(err);
-            toast.error("Delete failed");
+        } catch {
+            toast.error("Failed to delete lead. Please try again.");
         } finally {
             setDeleteLoading(false);
         }
     };
 
-    const cancelDelete = () => {
-        setDeleteId(null);
-    };
-
     const handleExport = async () => {
-        const res = await getBuyLeadExport({
-            search: search || undefined,
-            sort_by: "id",
-            sort_order: "desc",
-        });
-
-        const blob = new Blob([res.data], { type: "text/csv" });
-        const url = window.URL.createObjectURL(blob);
-
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `buy_leads_${Date.now()}.csv`;
-
-        document.body.appendChild(link);
-        link.click();
-
-        link.remove();
-        window.URL.revokeObjectURL(url);
+        try {
+            const res = await getBuyLeadExport({
+                search: search || undefined,
+                sort_by: "id",
+                sort_order: "desc",
+            });
+            downloadCsv(res.data, `buy_leads_${Date.now()}.csv`);
+            toast.success("Export downloaded");
+        } catch {
+            toast.error("Export failed. Please try again.");
+        }
     };
 
     const [cursor, setCursor] = useState(null);
@@ -110,52 +63,45 @@ export default function BuyLeadList() {
 
     const [total, setTotal] = useState(0);
 
-    const fetchLeads = async () => {
+    const fetchLeads = async (signal) => {
         try {
             setLoading(true);
-
             const res = await getBuyLeads({
-                cursor: cursor,
+                cursor,
                 limit: pageSize,
-                search: search,
+                search,
                 sort_by: "id",
                 sort_order: "desc",
             });
+            if (signal?.aborted) return;
 
             const result = res.data;
-
             setData(result.items || []);
             setTotal(result.total || 0);
 
             if (result.next && result.items?.length > 0) {
-                const queryString = result.next.split("?")[1];
-                const params = new URLSearchParams(queryString);
-                const next = params.get("cursor");
-
-                setNextCursor(
-                    result.items.length < pageSize ? null : next
-                );
+                const params = new URLSearchParams(result.next.split("?")[1]);
+                setNextCursor(result.items.length < pageSize ? null : params.get("cursor"));
             } else {
                 setNextCursor(null);
             }
-
-
         } catch (err) {
-            console.error(err);
+            if (!signal?.aborted) toast.error("Failed to load leads.");
         } finally {
-            setLoading(false);
+            if (!signal?.aborted) setLoading(false);
         }
     };
 
     useEffect(() => {
+        const controller = new AbortController();
         const delay = setTimeout(() => {
-            if (search.length === 0 || search.length >= 4) {
-                fetchLeads();
+            if (search.length === 0 || search.length >= 3) {
+                fetchLeads(controller.signal);
             }
-        }, search ? 500 : 0);
+        }, search ? 400 : 0);
 
-        return () => clearTimeout(delay);
-    }, [cursor, pageSize, search]);
+        return () => { controller.abort(); clearTimeout(delay); };
+    }, [cursor, pageSize, search]); // eslint-disable-line
 
     const handleNext = () => {
         if (!nextCursor) return;
@@ -181,7 +127,7 @@ export default function BuyLeadList() {
             label: "Status",
             render: (row) => (
                 <span className={`badge ${getStatusClass(row.status)}`}>
-                    {row.status}
+                    {formatStatus(row.status)}
                 </span>
             ),
         },
@@ -190,10 +136,9 @@ export default function BuyLeadList() {
             label: "Stage",
             render: (row) => {
                 const stage = row.leadFollowup?.stage;
-
                 return (
                     <span className={`badge ${getStageClass(stage)}`}>
-                        {stage || "-"}
+                        {formatStage(stage)}
                     </span>
                 );
             },
@@ -262,7 +207,7 @@ export default function BuyLeadList() {
             label: "Action",
             render: (row) => (
                 <ActionMenu
-                    onView={() => console.log("View", row)}
+                    onView={() => handleView(row)}
                     onEdit={() => handleEdit(row)}
                     onDelete={() => handleDeleteClick(row)}
                 />
@@ -273,9 +218,9 @@ export default function BuyLeadList() {
     return (
         <MainLayout>
             <div className="content">
-                <h3 style={{ marginBottom: "20px" }}>
-                    {loading ? <Skeleton width={200} /> : "Search Leads"}
-                </h3>
+                <div className="page-header">
+                    <h3>{loading ? <Skeleton width={180} /> : "All Buy Leads"}</h3>
+                </div>
 
                 <TableToolbar
                     search={search}
@@ -283,6 +228,7 @@ export default function BuyLeadList() {
                     view={view}
                     setView={setView}
                     onExport={handleExport}
+
                 />
 
                 <div className="table-container">
@@ -313,10 +259,10 @@ export default function BuyLeadList() {
 
                                             <div className="right">
                                                 <span className={`badge ${getStatusClass(row.status)}`}>
-                                                    {row.status}
+                                                    {formatStatus(row.status)}
                                                 </span>
                                                 <ActionMenu
-                                                    onView={() => console.log("View", row)}
+                                                    onView={() => handleView(row)}
                                                     onEdit={() => handleEdit(row)}
                                                     onDelete={() => handleDeleteClick(row)}
                                                 />
@@ -358,11 +304,10 @@ export default function BuyLeadList() {
 
                                             <div className="followup-left">
                                                 <span className={`badge ${getStageClass(lf.stage)}`}>
-                                                    {lf.stage || "-"}
+                                                    {formatStage(lf.stage)}
                                                 </span>
-
-                                                <span className="badge light">
-                                                    {lf.disposition || "-"}
+                                                <span className="badge gray">
+                                                    {lf.disposition || "—"}
                                                 </span>
                                             </div>
 

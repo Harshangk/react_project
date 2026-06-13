@@ -7,9 +7,7 @@ function MainLayout({ children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const location = useLocation();
 
-    useEffect(() => {
-        setSidebarOpen(false);
-    }, [location.pathname]);
+    useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
     useEffect(() => {
         document.body.classList.toggle("nav-open", sidebarOpen);
@@ -20,19 +18,17 @@ function MainLayout({ children }) {
         <div className={`layout ${sidebarOpen ? "sidebar-open" : ""}`}>
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-            <button
-                type="button"
+            {/* Backdrop — click to close sidebar on mobile */}
+            <div
                 className="sidebar-overlay"
-                aria-label="Close navigation"
+                role="presentation"
                 onClick={() => setSidebarOpen(false)}
+                aria-hidden="true"
             />
 
             <div className="main">
                 <Header onMenuClick={() => setSidebarOpen(true)} />
-
-                <main className="content">
-                    {children}
-                </main>
+                <main>{children}</main>
             </div>
         </div>
     );

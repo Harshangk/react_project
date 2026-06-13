@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getMenu } from "../../api/services";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as Icons from "lucide-react";
@@ -7,164 +7,134 @@ import appConfig from "../../config/appConfig";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 
+const isRouteMatch = (basePath, currentPath) =>
+    !!basePath && (currentPath === basePath || currentPath.startsWith(basePath + "/"));
+
 function Sidebar({ isOpen = false, onClose }) {
-    const [menu, setMenu] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [menu, setMenu]         = useState([]);
+    const [loading, setLoading]   = useState(true);
     const [openMenu, setOpenMenu] = useState(null);
 
-    const navigate = useNavigate();
-    const location = useLocation();
-
-    const isRouteMatch = (basePath, currentPath) => {
-        if (!basePath) return false;
-
-        return (
-            currentPath === basePath ||
-            currentPath.startsWith(basePath + "/")
-        );
-    };
+    const navigate   = useNavigate();
+    const location   = useLocation();
+    const hasFetched = useRef(false);
 
     useEffect(() => {
-        fetchMenu();
+        if (hasFetched.current) return;
+        hasFetched.current = true;
+        getMenu()
+            .then(res => setMenu(res.data || []))
+            .catch(() => {})
+            .finally(() => setLoading(false));
     }, []);
 
-    const fetchMenu = async () => {
-        try {
-            setLoading(true);
-            const res = await getMenu();
-            setMenu(res.data);
-        } catch (err) {
-            console.error("Menu fetch error:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
+    /* Auto-expand parent whose child matches current route */
     useEffect(() => {
-        if (menu.length === 0) return;
-
-        const currentPath = location.pathname;
-
-        const activeParent = menu.find((item) =>
-            item.children?.some((child) =>
-                isRouteMatch(child.menuPath, currentPath)
-            )
+        if (!menu.length) return;
+        const active = menu.find(item =>
+            item.children?.some(c => isRouteMatch(c.menuPath, location.pathname))
         );
-
-        if (activeParent) {
-            setOpenMenu(activeParent.id);
-        } else {
-            setOpenMenu(null);
-        }
+        setOpenMenu(active?.id ?? null);
     }, [location.pathname, menu]);
 
-    const goTo = (path) => {
+    /* Close sidebar when route changes (mobile) */
+    useEffect(() => { onClose?.(); }, [location.pathname]); // eslint-disable-line
+
+    const goTo = useCallback((path) => {
         if (!path) return;
-
         navigate(path);
-        onClose?.();
-    };
+    }, [navigate]);
 
-    const handleClick = (item) => {
+    const handleParentClick = useCallback((item) => {
         if (item.children?.length > 0) {
-            setOpenMenu((prev) => (prev === item.id ? null : item.id));
+            setOpenMenu(prev => (prev === item.id ? null : item.id));
         } else {
             goTo(item.menuPath);
         }
-    };
+    }, [goTo]);
 
-    const renderIcon = (iconName) => {
+    const renderIcon = useCallback((iconName) => {
         if (!iconName) return null;
-        const IconComponent = Icons[iconName];
-        return IconComponent ? <IconComponent size={18} /> : null;
-    };
+        const Icon = Icons[iconName];
+        return Icon ? <Icon size={17} /> : null;
+    }, []);
 
-    return (
-        <aside className={`sidebar ${isOpen ? "open" : ""}`} aria-label="Main navigation">
-            <div className="sidebar-brand">
-                <h2 className="logo">
-                    {loading ? (
-                        <Skeleton width={150} height={24} />
-                    ) : (
-                        <>
-                            <img
-                                src={appConfig.logo}
-                                alt="logo"
-                                className="logo-img"
-                            />
-                            {appConfig.appName}
-                        </>
-                    )}
-                </h2>
+    const menuItems = useMemo(() => menu.map(item => {
+        const isChildActive  = item.children?.some(c => isRouteMatch(c.menuPath, location.pathname));
+        const isParentActive = isRouteMatch(item.menuPath, location.pathname) || isChildActive;
+        const isExpanded     = openMenu === item.id;
 
+        return (
+            <div key={item.id}>
                 <button
                     type="button"
-                    className="icon-btn sidebar-close"
+                    className={`menu-item ${isParentActive ? "active" : ""}`}
+                    onClick={() => handleParentClick(item)}
+                    aria-expanded={item.children?.length > 0 ? isExpanded : undefined}
+                >
+                    <div className="menu-left">
+                        {renderIcon(item.menuIcon)}
+                        <span>{item.menuName}</span>
+                    </div>
+                    {item.children?.length > 0 && (
+                        isExpanded
+                            ? <ChevronDown size={14} style={{ flexShrink: 0 }} />
+                            : <ChevronRight size={14} style={{ flexShrink: 0 }} />
+                    )}
+                </button>
+
+                {isExpanded && (
+                    <div className="submenu-container" role="group">
+                        {item.children.map(child => (
+                            <button
+                                type="button"
+                                key={child.id}
+                                className={`submenu-item ${isRouteMatch(child.menuPath, location.pathname) ? "active" : ""}`}
+                                onClick={() => goTo(child.menuPath)}
+                            >
+                                <span className="submenu-dot" aria-hidden="true" />
+                                {child.menuName}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    }), [menu, location.pathname, openMenu, handleParentClick, renderIcon, goTo]);
+
+    return (
+        <aside
+            className={`sidebar ${isOpen ? "open" : ""}`}
+            aria-label="Main navigation"
+            aria-hidden={!isOpen && undefined}
+        >
+            <div className="sidebar-brand">
+                <div className="logo">
+                    <img src={appConfig.logo} alt="" className="logo-img" aria-hidden="true" />
+                    <span className="logo-text">{appConfig.appName}</span>
+                </div>
+
+                {/* Close button — visible on mobile overlay mode */}
+                <button
+                    type="button"
+                    className="sidebar-close-btn"
                     onClick={onClose}
                     aria-label="Close navigation"
                 >
-                    <X size={20} />
+                    <X size={18} />
                 </button>
             </div>
 
-            <hr />
+            <div className="sidebar-divider" />
 
-            {loading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                    <Skeleton key={i} height={30} style={{ marginBottom: "12px" }} />
-                ))
-            ) : (
-                menu.map((item) => {
-                    const isChildActive = item.children?.some(
-                        (child) => isRouteMatch(child.menuPath, location.pathname)
-                    );
-
-                    const isParentActive =
-                        isRouteMatch(item.menuPath, location.pathname) || isChildActive;
-
-                    return (
-                        <div key={item.id}>
-                            <button
-                                type="button"
-                                className={`menu-item ${isParentActive ? "active" : ""}`}
-                                onClick={() => handleClick(item)}
-                            >
-                                <div className="menu-left">
-                                    {renderIcon(item.menuIcon)}
-                                    <span>{item.menuName}</span>
-                                </div>
-
-                                {item.children?.length > 0 && (
-                                    openMenu === item.id
-                                        ? <ChevronDown size={16} />
-                                        : <ChevronRight size={16} />
-                                )}
-                            </button>
-
-                            {openMenu === item.id && (
-                                <div className="submenu-container">
-                                    {item.children?.map((child) => {
-                                        const isActive =
-                                            isRouteMatch(child.menuPath, location.pathname);
-
-                                        return (
-                                            <button
-                                                type="button"
-                                                key={child.id}
-                                                className={`submenu-item ${isActive ? "active" : ""}`}
-                                                onClick={() => goTo(child.menuPath)}
-                                            >
-                                                <span className="submenu-dot"></span>
-                                                {child.menuName}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    );
-                })
-            )}
+            <nav className="sidebar-inner" aria-label="Site navigation">
+                {loading
+                    ? Array.from({ length: 6 }).map((_, i) => (
+                        <Skeleton key={i} height={36} borderRadius={6} style={{ marginBottom: 4 }} />
+                    ))
+                    : menuItems
+                }
+            </nav>
         </aside>
     );
 }

@@ -1,5 +1,4 @@
 import { Search, Download, LayoutGrid, Table } from "lucide-react";
-// import { getBuyLeadExport } from "../../api/services";
 import { useState } from "react";
 
 export default function TableToolbar({
@@ -9,82 +8,80 @@ export default function TableToolbar({
     setView,
     onExport,
     showSelectAll = false,
-    onSelectAll = () => { },
+    onSelectAll   = () => {},
     isAllSelected = false,
     selectedCount = 0,
 }) {
     const [exporting, setExporting] = useState(false);
 
     const handleExport = async () => {
-        if (!onExport) return;
-
-        try {
-            setExporting(true);
-            await onExport();
-        } catch (err) {
-            console.error("Export failed", err);
-        } finally {
-            setExporting(false);
-        }
+        if (!onExport || exporting) return;
+        setExporting(true);
+        try { await onExport(); } finally { setExporting(false); }
     };
-
 
     return (
         <div className="table-toolbar">
-            {/* SEARCH */}
+            {/* Search */}
             <div className="search-box">
-                <Search className="search-icon" size={16} />
+                <Search className="search-icon" size={15} />
                 <input
-                    type="text"
-                    placeholder="Search..."
+                    type="search"
+                    placeholder="Search…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
+                    aria-label="Search"
                 />
             </div>
 
-            {/* ACTIONS */}
+            {/* Actions */}
             <div className="toolbar-actions">
-                {/* ✅ SELECT ALL (OPTIONAL) */}
+                {/* Select all (optional) */}
                 {showSelectAll && (
-                    <div className="select-all">
+                    <label className="select-all">
                         <input
                             type="checkbox"
                             checked={isAllSelected}
                             onChange={onSelectAll}
                         />
-                        <span>
-                            {selectedCount > 0
-                                ? `${selectedCount} selected`
-                                : "Select All"}
-                        </span>
-                    </div>
+                        <span>{selectedCount > 0 ? `${selectedCount} selected` : "Select All"}</span>
+                    </label>
                 )}
-                {/* VIEW TOGGLE */}
-                <div className="view-toggle">
+
+                {/* View toggle */}
+                <div className="view-toggle" role="group" aria-label="Switch view">
                     <button
+                        type="button"
                         className={`toggle-btn ${view === "table" ? "active" : ""}`}
                         onClick={() => setView("table")}
+                        title="Table view"
+                        aria-pressed={view === "table"}
                     >
-                        <Table size={16} />
+                        <Table size={15} />
                     </button>
-
                     <button
+                        type="button"
                         className={`toggle-btn ${view === "card" ? "active" : ""}`}
                         onClick={() => setView("card")}
+                        title="Card view"
+                        aria-pressed={view === "card"}
                     >
-                        <LayoutGrid size={16} />
+                        <LayoutGrid size={15} />
                     </button>
                 </div>
 
-                {/* EXPORT */}
-                <button
-                    className="btn-light"
-                    onClick={handleExport}
-                    disabled={exporting}
-                >
-                    <Download size={16} />
-                    {exporting ? "Exporting..." : "Export"}
-                </button>
+                {/* Export */}
+                {onExport && (
+                    <button
+                        type="button"
+                        className="btn-light"
+                        onClick={handleExport}
+                        disabled={exporting}
+                    >
+                        <Download size={14} />
+                        {exporting ? "Exporting…" : "Export"}
+                    </button>
+                )}
             </div>
         </div>
     );

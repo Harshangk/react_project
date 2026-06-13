@@ -6,6 +6,7 @@ import TableToolbar from "../../components/common/TableToolbar";
 import ActionMenu from "../../components/common/ActionMenu";
 import { formatDateTime } from "../../utils/formatDate";
 import { getBuyImportLeads, downloadImportFile, getBuyImportLeadExport } from "../../api/services";
+import { downloadCsv } from "../../utils/badgeUtils";
 import { toast } from "react-toastify";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
@@ -20,36 +21,30 @@ export default function BuyLeadList() {
 
     const [view, setView] = useState("table");
 
-    const getStatusClass = (status) => {
-        if (!status) return "badge";
+    const getTrackerClass = (status) => {
+        if (!status) return "gray";
+        const map = { pending: "orange", complete: "green" };
+        return map[status.toLowerCase()] || "gray";
+    };
 
-        const map = {
-            pending: "badge orange",
-            complete: "badge green",
-        };
-
-        return map[status.toLowerCase()] || "badge gray";
+    const formatTrackerStatus = (status) => {
+        if (!status) return "—";
+        const map = { pending: "Pending", complete: "Complete" };
+        return map[status.toLowerCase()] ?? status;
     };
 
     const handleExport = async () => {
-        const res = await getBuyImportLeadExport({
-            search: search || undefined,
-            sort_by: "id",
-            sort_order: "desc",
-        });
-
-        const blob = new Blob([res.data], { type: "text/csv" });
-        const url = window.URL.createObjectURL(blob);
-
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `buy_leads_tracker_${Date.now()}.csv`;
-
-        document.body.appendChild(link);
-        link.click();
-
-        link.remove();
-        window.URL.revokeObjectURL(url);
+        try {
+            const res = await getBuyImportLeadExport({
+                search: search || undefined,
+                sort_by: "id",
+                sort_order: "desc",
+            });
+            downloadCsv(res.data, `buy_leads_tracker_${Date.now()}.csv`);
+            toast.success("Export downloaded");
+        } catch {
+            toast.error("Export failed. Please try again.");
+        }
     };
     const [cursor, setCursor] = useState(null);
     const [nextCursor, setNextCursor] = useState(null);
@@ -87,8 +82,8 @@ export default function BuyLeadList() {
             }
 
 
-        } catch (err) {
-            console.error(err);
+        } catch {
+            // silently skip on abort
         } finally {
             setLoading(false);
         }
@@ -193,8 +188,8 @@ export default function BuyLeadList() {
             key: "fileStatus",
             label: "Status",
             render: (row) => (
-                <span className={`badge ${getStatusClass(row.fileStatus)}`}>
-                    {row.fileStatus}
+                <span className={`badge ${getTrackerClass(row.fileStatus)}`}>
+                    {formatTrackerStatus(row.fileStatus)}
                 </span>
             ),
         },
@@ -226,8 +221,7 @@ export default function BuyLeadList() {
 
             toast.success("Download completed");
 
-        } catch (err) {
-            console.error(err);
+        } catch {
             toast.error("Download failed");
         } finally {
             setDownloadingKey(null);
@@ -348,8 +342,8 @@ export default function BuyLeadList() {
 
                                     {/* FOOTER */}
                                     <div className="import-footer">
-                                        <span className={getStatusClass(row.fileStatus)}>
-                                            {row.fileStatus}
+                                        <span className={`badge ${getTrackerClass(row.fileStatus)}`}>
+                                            {formatTrackerStatus(row.fileStatus)}
                                         </span>
 
                                         <span className="import-date">
