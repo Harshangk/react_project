@@ -7,7 +7,7 @@ import appConfig from "./config/appConfig";
 import { applyTheme, getPreferredTheme } from "./utils/theme";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
-document.title = appConfig.appName;
+document.title = "Jolly Motors | Dealer CRM";
 applyTheme(getPreferredTheme());
 
 const favicon = document.getElementById("favicon");

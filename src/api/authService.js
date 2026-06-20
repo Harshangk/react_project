@@ -7,8 +7,8 @@ export const loginUser = (username, password) => {
     params.append("password", password);
 
     return API.post("/auth/login", params, {
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
 };
+
+export const logoutUser = () => API.post("/auth/logout");

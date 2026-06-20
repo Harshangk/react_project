@@ -5,6 +5,7 @@ import { LockKeyhole, LogIn, Moon, Sun, UserRound, Car, CheckCircle2 } from "luc
 import { loginUser } from "../../api/authService";
 import appConfig from "../../config/appConfig";
 import { getPreferredTheme, toggleTheme as switchTheme } from "../../utils/theme";
+import { useUser } from "../../context/UserContext";
 
 const FEATURES = [
     "Buyer lead management & followup",
@@ -15,6 +16,7 @@ const FEATURES = [
 
 function Login() {
     const navigate = useNavigate();
+    const { refreshUser } = useUser();
     const [form, setForm] = useState({ username: "", password: "" });
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
@@ -44,6 +46,7 @@ function Login() {
         try {
             setLoading(true);
             await loginUser(form.username, form.password);
+            await refreshUser();
             navigate("/dashboard");
         } catch {
             toast.error("Invalid username or password");
@@ -68,8 +71,10 @@ function Login() {
                 {/* LEFT — brand showcase */}
                 <section className="login-showcase" aria-label={`${appConfig.appName} product overview`}>
                     <div className="login-showcase-brand">
-                        <img src={appConfig.logo} alt="" className="login-showcase-logo" aria-hidden="true" />
-                        <span>{appConfig.appName}</span>
+                        <div className="jm-badge jm-badge--lg">JM</div>
+                        <span className="jm-brand-name jm-brand-name--lg">
+                            <span className="jm-accent">Jolly</span>CRM
+                        </span>
                     </div>
 
                     <div className="login-showcase-copy">
@@ -115,8 +120,13 @@ function Login() {
                 {/* RIGHT — form */}
                 <section className="login-panel card--login" aria-label="Sign in">
                     <div className="login-brand">
-                        <img src={appConfig.logo} alt={`${appConfig.appName} logo`} className="logo-img" />
-                        <span>{appConfig.appName}</span>
+                        <div className="jm-badge jm-badge--lg">JM</div>
+                        <div className="login-brand-text">
+                            <div className="jm-brand-name jm-brand-name--lg">
+                                <span className="jm-accent">Jolly</span>CRM
+                            </div>
+                            <div className="login-brand-subtitle">Pre-Owned Car Dealership CRM</div>
+                        </div>
                     </div>
 
                     <div className="login-heading">

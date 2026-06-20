@@ -8,8 +8,9 @@ import { useNavigate } from "react-router-dom";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { useState, useEffect } from "react";
-import { postBuyLeadFollowup, BuyLeadSentPrePrice, BuyLeadProvidePrePrice, getBuyFollowupLeadByID, getBuyStage, getBuyStageDispositions, getPreferredTime, getLeadSources, getBuyModes, getFuelTypes, getColor, getOwner, getMake, getModel, getYear, getUser, getBroker, getBranch, getState, getCity, getCurrentUser, getBuyFollowupHistory } from "../../api/services";
-import { PAYMENT_ROLE_IDS, PRICING_ROLE_IDS } from "../../config/roleConfig";
+import { postBuyLeadFollowup, BuyLeadSentPrePrice, BuyLeadProvidePrePrice, getBuyFollowupLeadByID, getBuyStage, getBuyStageDispositions, getPreferredTime, getLeadSources, getBuyModes, getFuelTypes, getColor, getOwner, getMake, getModel, getYear, getUser, getBroker, getBranch, getState, getCity, getBuyFollowupHistory } from "../../api/services";
+import { useUser } from "../../context/UserContext";
+import { PRICING_ROLE_IDS } from "../../config/roleConfig";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import DataTable from "../../components/common/DataTable";
@@ -60,7 +61,7 @@ export default function BuyLeadFollowupForm() {
     const [disposition, setDisposition] = useState([]);
     const [dispositionLoading, setDispositionLoading] = useState(false);
     const [preferredtime, setPreferredTime] = useState([]);
-    const [currentUser, setCurrentUser] = useState(null);
+    const { user: currentUser } = useUser();
 
     const [leadStatus, setLeadStatus] = useState("");
 
@@ -73,11 +74,9 @@ export default function BuyLeadFollowupForm() {
     const [historyCursor, setHistoryCursor] = useState(null);
     const [historyNextCursor, setHistoryNextCursor] = useState(null);
     const [historyPrevStack, setHistoryPrevStack] = useState([]);
-    const currentUserRoleId = currentUser?.role_id ?? currentUser?.roleId ?? currentUser?.role?.id ?? currentUser?.role?.role_id ?? null;
-    const isUserPaymentRole = PAYMENT_ROLE_IDS.includes(currentUserRoleId);
-    const isUserPricingRole = PRICING_ROLE_IDS.includes(currentUserRoleId);
-    const canSendForPrePrice = leadStatus === "allocated" && isUserPaymentRole;
-    const isPrePriceLead = leadStatus === "preprice";
+    const isUserPricingRole  = PRICING_ROLE_IDS.includes(currentUser?.roleId ?? null);
+    const canSendForPrePrice = leadStatus?.toLowerCase() === "allocated"; /* backend enforces role */
+    const isPrePriceLead     = leadStatus?.toLowerCase() === "preprice";
     const canProvidePrePrice = isPrePriceLead && isUserPricingRole;
     const showFollowupSection = !isPrePriceLead;
     const showRightSection = showFollowupSection || canProvidePrePrice;
@@ -447,16 +446,6 @@ export default function BuyLeadFollowupForm() {
         };
         fetchEnums();
 
-        const fetchUser = async () => {
-            try {
-                const res = await getCurrentUser();
-                setCurrentUser(res.data);
-            } catch (err) {
-                console.error("Current user API error:", err);
-            }
-        };
-
-        fetchUser();
     }, []);
 
     // Submit

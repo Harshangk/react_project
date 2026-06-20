@@ -3,7 +3,6 @@ import { getMenu } from "../../api/services";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as Icons from "lucide-react";
 import { ChevronDown, ChevronRight, X } from "lucide-react";
-import appConfig from "../../config/appConfig";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 
@@ -110,8 +109,10 @@ function Sidebar({ isOpen = false, onClose }) {
         >
             <div className="sidebar-brand">
                 <div className="logo">
-                    <img src={appConfig.logo} alt="" className="logo-img" aria-hidden="true" />
-                    <span className="logo-text">{appConfig.appName}</span>
+                    <div className="jm-badge" aria-hidden="true">JM</div>
+                    <span className="jm-brand-name">
+                        <span className="jm-accent">Jolly</span>CRM
+                    </span>
                 </div>
 
                 {/* Close button — visible on mobile overlay mode */}

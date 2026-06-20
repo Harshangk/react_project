@@ -1,34 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Navigate } from "react-router-dom";
-import { getCurrentUser } from "../api/services";
+import { useUser } from "../context/UserContext";
 
+/**
+ * Gate that redirects unauthenticated users to /login.
+ * Reads from UserContext — no duplicate getCurrentUser() network call.
+ */
 function ProtectedRoute({ children }) {
-    const [loading, setLoading] = useState(true);
-    const [authenticated, setAuthenticated] = useState(false);
+    const { user, userLoading } = useUser();
 
-    useEffect(() => {
-        const verifyAuth = async () => {
-            try {
-                await getCurrentUser();
-                setAuthenticated(true);
-            } catch (error) {
-                setAuthenticated(false);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        verifyAuth();
-    }, []);
-
-    if (loading) {
-        return <div>Loading...</div>;
-    }
-
-    if (!authenticated) {
-        return <Navigate to="/login" replace />;
-    }
-
+    if (userLoading) return null; /* UserContext is fetching — render nothing (App shows no flash) */
+    if (!user) return <Navigate to="/login" replace />;
     return children;
 }
 
