@@ -66,8 +66,8 @@ function Header({ onMenuClick }) {
     const displayRole = user?.roleName || "";
     const avatarColor = getAvatarColor(user?.userName || "");
 
-    /* Lead notifications — userId starts polling, currentUsername filters to "my leads" */
-    const { notifications, unreadCount, notifPermission, requestPermission, markAllRead, removeNotif } =
+    /* Lead notifications — real-time via WebSocket; wsStatus: "connecting"|"live"|"reconnecting" */
+    const { notifications, unreadCount, wsStatus, notifPermission, requestPermission, markAllRead, removeNotif } =
         useLeadNotifications(
             user?.id || user?.userId || displayName || null,
             displayName   // ← the filter: only notify if telecaller/executive === me
@@ -151,6 +151,14 @@ function Header({ onMenuClick }) {
                                 {unreadCount > 99 ? "99+" : unreadCount}
                             </span>
                         )}
+                        <span
+                            className={`notif-ws-dot notif-ws-dot--${wsStatus}`}
+                            title={
+                                wsStatus === "live"         ? "Live — real-time notifications active" :
+                                wsStatus === "reconnecting" ? "Reconnecting…" :
+                                "Connecting…"
+                            }
+                        />
                     </button>
 
                     {showNotif && (
