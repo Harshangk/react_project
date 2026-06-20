@@ -85,6 +85,7 @@ export function useLeadNotifications(userId, currentUsername) {
     const seenMap      = useRef(null);
     const detailMap    = useRef(null);
     const timerRef     = useRef(null);
+    const recentRef    = useRef(new Map());          // dedup: `${srcId}:${leadId}` → ms
 
     useEffect(() => { usernameRef.current = currentUsername; }, [currentUsername]);
 
@@ -96,6 +97,15 @@ export function useLeadNotifications(userId, currentUsername) {
     /* ── Shared dispatcher (used by both WS and polling paths) ───── */
     const dispatchOne = useCallback((src, lead) => {
         if (!isAssignedToMe(lead, usernameRef.current)) return;
+
+        // Dedup: same source+lead within 60 s is always a duplicate
+        // (StrictMode double-mount, overlapping polls, concurrent WS+poll, etc.)
+        const key  = `${src.id}:${lead.id}`;
+        const last = recentRef.current.get(key);
+        const now  = Date.now();
+        if (last && now - last < 60_000) return;
+        recentRef.current.set(key, now);
+
         const notif   = buildNotif(src, lead);
         const onClick = () => { window.location.href = src.navPath; };
         setNotifications(prev => [notif, ...prev].slice(0, MAX_KEEP));
@@ -112,16 +122,21 @@ export function useLeadNotifications(userId, currentUsername) {
     }, [dispatchOne]);
 
     /* ── Polling (fallback) ──────────────────────────────────────── */
+    // "reopen" is wsOnly — it overlaps with fresh_allocation (both query Fresh),
+    // causing duplicate notifications. Reopen detection via WS is accurate
+    // because the server sends a specific event type.
+    const POLL_SOURCES = NOTIFICATION_SOURCES.filter(src => !src.wsOnly);
+
     const poll = useCallback(async () => {
         const results = await Promise.allSettled(
-            NOTIFICATION_SOURCES.map(src => src.fetch(src.params))
+            POLL_SOURCES.map(src => src.fetch(src.params))
         );
 
         const uname = usernameRef.current;
 
         results.forEach((result, idx) => {
             if (result.status !== "fulfilled") return;
-            const src   = NOTIFICATION_SOURCES[idx];
+            const src   = POLL_SOURCES[idx];
             const items = src.getItems(result.value);
 
             /* First poll — seed; never notify */
@@ -162,10 +177,9 @@ export function useLeadNotifications(userId, currentUsername) {
 
     const startPolling = useCallback(() => {
         if (!userId || timerRef.current) return;
-        seenMap.current   = new Map();
-        detailMap.current = new Map();
-        poll();                                             // immediate seed
-        timerRef.current  = setInterval(poll, POLL_MS);
+        // seenMap is already seeded by the initial poll in useEffect — do NOT reset it
+        // here or every WS failure would cause a re-notification of existing leads.
+        timerRef.current = setInterval(poll, POLL_MS);
     }, [userId, poll]);
 
     const stopPolling = useCallback(() => {

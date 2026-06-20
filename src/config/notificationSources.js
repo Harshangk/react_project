@@ -44,17 +44,17 @@ export const NOTIFICATION_SOURCES = [
         getItems: (res)    => res.data?.items || [],
     },
     {
-        id:       "reopen",
-        label:    "Reopened",
-        navPath:  "/leads/buyleadfollowuplist",
-        toTitle:  (items) => items.length === 1
+        id:      "reopen",
+        label:   "Reopened",
+        navPath: "/leads/buyleadfollowuplist",
+        // wsOnly: true — polling this would overlap with fresh_allocation (both
+        // query buy_stage=Fresh), causing every new allocation to fire twice.
+        // The server must send { sourceId: "reopen", lead } explicitly via WS.
+        wsOnly:  true,
+        toTitle: (items) => items.length === 1
             ? `Lead reopened & assigned to you — ${customerOf(items[0])}`
             : `${items.length} leads reopened and assigned to you`,
-        toBody:   (items) => items.length === 1 ? vehicleOf(items[0]) : listNames(items),
-        /* polling fallback */
-        params:   { buy_stage: "Fresh", limit: 100 },
-        fetch:    (params) => getBuyFollowupLeads(params),
-        getItems: (res)    => res.data?.items || [],
+        toBody:  (items) => items.length === 1 ? vehicleOf(items[0]) : listNames(items),
     },
     {
         id:              "preprice_provided",
