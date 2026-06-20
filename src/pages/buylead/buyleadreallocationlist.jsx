@@ -1,5 +1,6 @@
 ﻿import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
+import { useViewMode } from "../../hooks/useViewMode";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout";
 import DataTable from "../../components/common/DataTable";
@@ -46,7 +47,7 @@ export default function BuyReallocationList() {
             value: item.id,
             label: item.userName,
         }));
-    const [view, setView] = useState("table");
+    const [view, setView] = useViewMode();
 
     useEffect(() => {
         const fetchEnums = async () => {

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useViewMode } from "../../hooks/useViewMode";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout";
 import DataTable from "../../components/common/DataTable";
@@ -22,7 +23,7 @@ export default function BuyLeadList() {
     const [pageSize, setPageSize]       = useState(10);
     const [deleteId, setDeleteId]       = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
-    const [view, setView]               = useState("table");
+    const [view, setView]               = useViewMode();
 
     const handleView   = (row) => navigate(`/leads/buyleadfollowup/${row.id}`);
     const handleEdit   = (row) => navigate(`/leads/buylead/${row.id}`);

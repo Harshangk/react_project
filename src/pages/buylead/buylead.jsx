@@ -94,7 +94,7 @@ export default function BuyLeadForm() {
 
     const mapYear = (data = []) =>
         data.map((item) => ({
-            value: item.year,
+            value: String(item.year),
             label: String(item.year),
         }));
 
@@ -239,7 +239,7 @@ export default function BuyLeadForm() {
                 setValue("mode", data.mode);
                 setValue("make", data.makeId);
                 setValue("fuelType", data.fuelType);
-                setValue("year", data.year);
+                setValue("year", data.mfgYear ? String(data.mfgYear) : "");
                 setValue("kms", data.kms);
                 setValue("owner", data.owner);
                 setValue("clientOffer", data.clientOffer);

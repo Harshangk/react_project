@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useViewMode } from "../../hooks/useViewMode";
 import MainLayout from "../../components/layout/MainLayout";
 import DataTable from "../../components/common/DataTable";
 import Pagination from "../../components/common/Pagination";
@@ -19,7 +20,7 @@ export default function BuyLeadList() {
     const [search, setSearch] = useState("");
     const [pageSize, setPageSize] = useState(10);
 
-    const [view, setView] = useState("table");
+    const [view, setView] = useViewMode();
 
     const getTrackerClass = (status) => {
         if (!status) return "gray";

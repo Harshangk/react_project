@@ -131,6 +131,9 @@ export const getBuyFollowupHistory = (leadId, params = {}) => {
     return API.get(`/v1/poc/buy/${leadId}/followup/history`, { params });
 };
 
+export const getOfferHistory = (leadId) =>
+    API.get(`/v1/poc/buy/${leadId}/offer/history`);
+
 export const importBuyLead = (formData, onUploadProgress) => {
     return API.post("/v1/poc/buy/import", formData, {
         headers: {

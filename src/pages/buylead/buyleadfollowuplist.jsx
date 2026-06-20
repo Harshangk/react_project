@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useViewMode } from "../../hooks/useViewMode";
 import { useNavigate } from "react-router-dom";
 import { Tag } from "lucide-react";
 import MainLayout from "../../components/layout/MainLayout";
@@ -36,7 +37,7 @@ export default function BuyFollowupLeadList() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch]   = useState("");
     const [pageSize, setPageSize] = useState(10);
-    const [view, setView]       = useState("table");
+    const [view, setView]       = useViewMode();
 
     /* Cursor-based pagination */
     const [cursor, setCursor]         = useState(null);

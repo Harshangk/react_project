@@ -8,7 +8,9 @@ import { useNavigate } from "react-router-dom";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { useState, useEffect } from "react";
-import { postBuyLeadFollowup, BuyLeadSentPrePrice, BuyLeadProvidePrePrice, getBuyFollowupLeadByID, getBuyStage, getBuyStageDispositions, getPreferredTime, getLeadSources, getBuyModes, getFuelTypes, getColor, getOwner, getMake, getModel, getYear, getUser, getBroker, getBranch, getState, getCity, getBuyFollowupHistory } from "../../api/services";
+import { useViewMode } from "../../hooks/useViewMode";
+import { postBuyLeadFollowup, BuyLeadSentPrePrice, BuyLeadProvidePrePrice, getBuyFollowupLeadByID, getBuyStage, getBuyStageDispositions, getPreferredTime, getLeadSources, getBuyModes, getFuelTypes, getColor, getOwner, getMake, getModel, getYear, getUser, getBroker, getBranch, getState, getCity, getBuyFollowupHistory, getOfferHistory } from "../../api/services";
+import PricingTimeline from "../../components/common/PricingTimeline";
 import { useUser } from "../../context/UserContext";
 import { PRICING_ROLE_IDS } from "../../config/roleConfig";
 import { useParams } from "react-router-dom";
@@ -65,15 +67,19 @@ export default function BuyLeadFollowupForm() {
 
     const [leadStatus, setLeadStatus] = useState("");
 
-    // history
+    // followup history
     const [historyData, setHistoryData] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
-    const [historyView, setHistoryView] = useState("table");
+    const [historyView, setHistoryView] = useViewMode();
     const [historyTotal, setHistoryTotal] = useState(0);
     const [historyPageSize, setHistoryPageSize] = useState(10);
     const [historyCursor, setHistoryCursor] = useState(null);
     const [historyNextCursor, setHistoryNextCursor] = useState(null);
     const [historyPrevStack, setHistoryPrevStack] = useState([]);
+
+    // offer / price history
+    const [offerHistory, setOfferHistory] = useState([]);
+    const [offerHistoryLoading, setOfferHistoryLoading] = useState(false);
     const isUserPricingRole  = PRICING_ROLE_IDS.includes(currentUser?.roleId ?? null);
     const canSendForPrePrice = leadStatus?.toLowerCase() === "allocated"; /* backend enforces role */
     const isPrePriceLead     = leadStatus?.toLowerCase() === "preprice";
@@ -93,6 +99,17 @@ export default function BuyLeadFollowupForm() {
     const isCityRequired = isHome;
     const isAddressRequired = isHome;
     const isCallDateRequired = isCallDate;
+
+    const watchedMakeId = watch("make");
+    const watchedModelId = watch("model");
+    const watchedYear = watch("year");
+    const makeName = make.find(m => m.value === watchedMakeId)?.label || "";
+    const modelName = model.find(m => m.value === watchedModelId)?.label || "";
+    const clientOfferVal = Number(watch("clientOffer") || 0);
+    const ourOfferVal = Number(watch("ourOffer") || 0);
+    const offerGapPct = ourOfferVal > 0
+        ? ((clientOfferVal - ourOfferVal) / ourOfferVal * 100)
+        : 0;
 
     const selectedSource = watch("source");
     const selectedSourceObj = leadSources.find(
@@ -582,6 +599,15 @@ export default function BuyLeadFollowupForm() {
         return () => controller.abort();
     }, [id, historyCursor, historyPageSize]);
 
+    useEffect(() => {
+        if (!id) return;
+        setOfferHistoryLoading(true);
+        getOfferHistory(id)
+            .then(res => setOfferHistory(res.data?.items || []))
+            .catch(() => setOfferHistory([]))
+            .finally(() => setOfferHistoryLoading(false));
+    }, [id]);
+
     const handleHistoryNext = () => {
         if (!historyNextCursor) return;
         setHistoryPrevStack((prev) => [...prev, historyCursor]);
@@ -641,12 +667,11 @@ export default function BuyLeadFollowupForm() {
 
                 <form
                     onSubmit={handleSubmit(onSubmit)}
-                    className="card"
                     style={{ width: "100%" }}
                 >
-                    <div className="followup-layout">
-                        {/* LEFT SIDE */}
-                        <div className="details-section">
+                    <div className="followup-page-grid">
+                        {/* LEFT COLUMN */}
+                        <div className="followup-col">
                             <div className="card">
                                 <h3 className="section-title">Customer Details </h3>
 
@@ -926,10 +951,15 @@ export default function BuyLeadFollowupForm() {
                             </div>
                         </div>
 
-                        {/* RIGHT SIDE */}
-                        {showRightSection && (
-                            <div className="followup-section">
-                                <div className="card">
+                        {/* RIGHT COLUMN */}
+                        <div className="followup-col">
+                            {isEdit && (
+                                <div className="card" style={{ padding: 20 }}>
+                                    <PricingTimeline items={offerHistory} loading={offerHistoryLoading} />
+                                </div>
+                            )}
+                            {showRightSection && (
+                                <div className="card followup-action-sticky">
                                     <h3 className="section-title">{isPrePriceLead ? "Provide Pre-Price" : "Followup"}</h3>
                                     <div className="details-grid">
 
@@ -1085,13 +1115,13 @@ export default function BuyLeadFollowupForm() {
                                         )}
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </form>
 
                 {isEdit && (
-                    <div className="card" style={{ marginTop: "24px" }}>
+                    <div className="card" style={{ marginTop: 20 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
                             <h3 className="section-title" style={{ margin: 0 }}>Followup History</h3>
                             <div className="view-toggle">

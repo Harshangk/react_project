@@ -1727,16 +1727,85 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; min-height:
     margin: 6px 0;
 }
 
-/* Followup form layout */
-.followup-layout {
-    display: flex; align-items: flex-start; gap: 20px;
+/* Followup page — smart 2-col + full-width history */
+.followup-page-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
 }
 
-.details-section { width: 70%; min-width: 0; }
+.followup-col {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
 
-.followup-section {
-    position: sticky; top: calc(var(--header-h) + 16px);
-    width: 30%; min-width: 280px;
+.followup-action-sticky {
+    position: sticky;
+    top: calc(var(--header-h) + 16px);
+}
+
+/* Lead summary strip */
+.lead-summary-strip {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 14px 20px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.summary-divider {
+    width: 1px;
+    height: 36px;
+    background: var(--border-color);
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.summary-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.summary-label {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.summary-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.summary-sub {
+    font-size: 11.5px;
+    color: var(--text-muted);
+}
+
+.summary-value {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.summary-price {
+    font-size: 14px;
+    font-weight: 700;
+}
+.summary-price.cep { color: #ef4444; }
+.summary-price.jmq { color: #3b82f6; }
+
+.summary-gap {
+    font-size: 14px;
+    font-weight: 700;
+    color: #f97316;
 }
 
 /* ============================================================
@@ -2535,13 +2604,9 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; min-height:
 @media (max-width: 1200px) {
     .form-grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
 
-    .followup-layout { flex-direction: column; }
+    .followup-page-grid { grid-template-columns: 1fr; }
 
-    .details-section,
-    .followup-section {
-        position: static;
-        width: 100%; min-width: 0;
-    }
+    .followup-action-sticky { position: static; }
 
     .quick-link-grid { grid-template-columns: repeat(2, 1fr); }
 }
